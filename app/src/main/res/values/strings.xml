@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">ExampleApp</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="phone_number">Phone number</string>
+    <string name="validate">Validate</string>
+    <string name="login">Login</string>
+    <string name="login_with">Login with</string>
+    <string name="mail_empty_message">Mail cannot be empty</string>
+    <string name="password_empty_message">Please insert password</string>
+    <string name="phone_number_not_valid">Phone number not valid</string>
+    <string name="sms_empty_message">Sms code cannot be empty</string>
+    <string name="loading_wait">Loading. Please wait...</string>
+    <string name="cancel">Cancel</string>
+    <string name="choose_company">Choose company</string>
+    <string name="sms_code">sms code</string>
+    <string name="start_shift">Start shift</string>
+    <string name="history">History</string>
+    <string name="change_account">Change account</string>
+    <string name="Setting">Setting</string>
+    <string name="drawer_open">"Drawer Open"</string>
+    <string name="drawer_close">"Drawer Close"</string>
+    <string name="end_shift">End shift</string>
+    <string name="in_shift">In shift</string>
+    <string name="not_in_shift">Not in shift</string>
+    <string name="loading">Loading</string>
+
+
+</resources>

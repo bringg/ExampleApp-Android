@@ -10,8 +10,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 
+import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
+
 public abstract class BaseActivity extends AppCompatActivity {
-    private static final long EMPTY_USER = 0;
     protected BringgProvider mBringgProvider;
     private AlertDialog mLoadingDialog;
 

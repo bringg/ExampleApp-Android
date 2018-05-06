@@ -15,6 +15,8 @@ import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.ShiftManager;
 
+import driver_sdk.shift.Shift;
+
 /**
  * TODO: document your custom view class.
  */
@@ -56,11 +58,13 @@ public class ShiftControlView extends FrameLayout {
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mReceiver, ShiftManager.getIntentFilterShiftChanged());
         if (getContext().getApplicationContext() instanceof BringgApp) {
             mShiftManager = ((BringgApp) getContext().getApplicationContext()).getShiftManager();
+            updateState();
         }
     }
 
     @Override
     protected void onDetachedFromWindow() {
+
         super.onDetachedFromWindow();
     }
 
@@ -110,11 +114,18 @@ public class ShiftControlView extends FrameLayout {
     private class BroadcastReceiverShiftChangeImpl extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (mShiftManager.getShift().on)
-                setState(ShiftState.SHIFT_ON);
-            else
-                setState(ShiftState.SHIFT_OFF);
+            updateState();
         }
+    }
+
+    private void updateState() {
+        Shift shift = mShiftManager.getShift();
+        if (shift == null)
+            return;
+        if (shift.on)
+            setState(ShiftState.SHIFT_ON);
+        else
+            setState(ShiftState.SHIFT_OFF);
     }
 
 

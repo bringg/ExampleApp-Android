@@ -7,16 +7,27 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bringg.exampleapp.login.LoginActivity;
+import com.bringg.exampleapp.utils.CircleTransform;
+import com.squareup.picasso.Picasso;
+
+import driver_sdk.models.User;
+
+import static com.bringg.exampleapp.BringgProvider.BASE_HOME;
 
 public class MainActivity extends BaseActivity {
 
     private static final int REQUEST_CODE_LOGIN = 1;
     private DrawerLayout mDrawerLayout;
     private Toolbar mToolBar;
+    private ImageView mImgUser;
+    private TextView mTvUserName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +38,17 @@ public class MainActivity extends BaseActivity {
 
         if (!isLoggedIn()) {
             startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN);
+        } else {
+            onUserLogin();
+        }
+    }
+
+    private void onUserLogin() {
+        User user = mBringgProvider.getClient().getUser();
+        mTvUserName.setText(user.getName());
+        String img = user.getImageUrl();
+        if (!TextUtils.isEmpty(img)) {
+            Picasso.with(this).load(new StringBuilder(BASE_HOME).append(user.getImageUrl()).toString()).transform(new CircleTransform()).into(mImgUser);
         }
 
     }
@@ -53,6 +75,9 @@ public class MainActivity extends BaseActivity {
             }
         };
         mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mImgUser = (ImageView) navigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
+        mTvUserName = (TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
+
     }
 
     private void initActionBar() {
@@ -69,6 +94,8 @@ public class MainActivity extends BaseActivity {
         if (requestCode == REQUEST_CODE_LOGIN) {
             if (resultCode != RESULT_OK)
                 finish();
+            else
+                onUserLogin();
 
         }
     }

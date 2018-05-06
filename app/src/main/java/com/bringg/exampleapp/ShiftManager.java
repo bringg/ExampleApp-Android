@@ -15,6 +15,8 @@ import driver_sdk.shift.GetShiftResultCallback;
 import driver_sdk.shift.Shift;
 import driver_sdk.shift.StartShiftResultCallback;
 
+import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
+
 public class ShiftManager {
 
     private final LeanBringgSDKClient mClient;
@@ -36,7 +38,7 @@ public class ShiftManager {
         mContex = context;
         mClient = bringgProvider.getClient();
         mShiftResultCallback = new ShiftResultCallbackImpl();
-        if (mClient.getUserId() != 0)
+        if (mClient.getUserId() != EMPTY_USER)
             load();
 
     }
@@ -64,7 +66,7 @@ public class ShiftManager {
 
     }
 
-    class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
+    private class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
 
         @Override
         public void onGetShiftStatusResult(@NotNull Shift shift) {

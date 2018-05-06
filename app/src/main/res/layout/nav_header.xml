@@ -8,12 +8,17 @@
               android:padding="16dp"
               android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
-    <ImageView android:id="@+id/nav_img_account"
+    <ImageView
+        android:id="@+id/nav_img_account"
         android:layout_width="96dp"
         android:layout_height="96dp"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/drw_empty_white_circle"
+        android:padding="2dp"
+        android:src="@drawable/ic_person"/>
 
-    <TextView android:id="@+id/nav_tv_header"
+    <TextView
+        android:id="@+id/nav_tv_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="My header title"

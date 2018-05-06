@@ -20,6 +20,9 @@ import driver_sdk.storage.db.SecuredStorageProvider;
 
 public class BringgProvider {
 
+    public static final long EMPTY_USER = 0;
+    public  static final String BASE_HOME = "https://app.bringg.com";
+
     private final Context mContext;
 
     private final LeanBringgSDKClient mLeanBringgSDKClient;
@@ -43,7 +46,6 @@ public class BringgProvider {
 
         @Override
         public void onShiftEnded() {
-
         }
 
         @Override

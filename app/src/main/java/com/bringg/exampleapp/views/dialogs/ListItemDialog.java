@@ -29,7 +29,7 @@ public class ListItemDialog {
     public void show() {
         AlertDialog.Builder builderSingle = new AlertDialog.Builder(mContext);
         builderSingle.setTitle(mTitle);
-        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(mContext, android.R.layout.select_dialog_singlechoice, mListItem);
+        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(mContext, R.layout.select_dialog_singlechoice, mListItem);
         builderSingle.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -41,7 +41,7 @@ public class ListItemDialog {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (mOnSelectedItemListener != null)
-                    mOnSelectedItemListener.onSelectedItem(which,mListItem.get(which));
+                    mOnSelectedItemListener.onSelectedItem(which, mListItem.get(which));
             }
         });
         builderSingle.show();
@@ -53,7 +53,7 @@ public class ListItemDialog {
         private Collection<String> items;
         private SelectedItemListener onSelectItemListener;
 
-       public Builder(Context context) {
+        public Builder(Context context) {
             this.context = context;
         }
 
@@ -61,6 +61,7 @@ public class ListItemDialog {
             this.title = title;
             return this;
         }
+
         public Builder setTitle(int id) {
             this.title = context.getString(id);
             return this;
@@ -83,6 +84,6 @@ public class ListItemDialog {
     }
 
     public interface SelectedItemListener {
-        void onSelectedItem(int index,String value);
+        void onSelectedItem(int index, String value);
     }
 }

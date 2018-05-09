@@ -1,9 +1,6 @@
 package com.bringg.exampleapp.views;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,30 +8,20 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
-import com.bringg.exampleapp.ShiftManager;
-
-import driver_sdk.shift.Shift;
+import com.bringg.exampleapp.shifts.ShiftHelper;
 
 /**
  * TODO: document your custom view class.
  */
 public class ShiftControlView extends FrameLayout {
 
-    private ShiftState mState;
-    private BroadcastReceiver mReceiver = new BroadcastReceiverShiftChangeImpl();
 
-    private enum ShiftState {
-        SHIFT_ON,
-        SHIFT_OFF,
-        LOAD_ON,
-        LOAD_OFF
-    }
 
     private Button mBtnToggleShift;
     private TextView mTvShiftState;
-    private ShiftManager mShiftManager;
+    private ShiftHelper mShiftHelper;
+    ShiftHelper.ShiftStateHelperListener mShiftStateHelperListener=new ShiftStateHelperListenerImpl();
 
 
     public ShiftControlView(Context context) {
@@ -55,48 +42,34 @@ public class ShiftControlView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mReceiver, ShiftManager.getIntentFilterShiftChanged());
-        if (getContext().getApplicationContext() instanceof BringgApp) {
-            mShiftManager = ((BringgApp) getContext().getApplicationContext()).getShiftManager();
-            updateState();
-        }
+        mShiftHelper.start();
     }
 
     @Override
     protected void onDetachedFromWindow() {
-
         super.onDetachedFromWindow();
+        mShiftHelper.stop();
+
     }
 
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_shift_control, this, true);
+
+        mShiftHelper =new ShiftHelper(getContext(),mShiftStateHelperListener);
         mTvShiftState = (TextView) findViewById(R.id.tv_shift_state);
         mBtnToggleShift = (Button) findViewById(R.id.btn_toggle_shift);
         mBtnToggleShift.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mShiftManager.getShift().on) {
-                    mShiftManager.updateShiftState(false);
-                    setState(ShiftState.LOAD_OFF);
-                } else {
-                    mShiftManager.updateShiftState(true);
-                    setState(ShiftState.LOAD_ON);
-                }
+                mShiftHelper.toggleShift();
             }
         });
     }
 
-    private void setState(ShiftState state) {
-        if (mState == state)
-            return;
-        mState = state;
-        updateView();
-    }
 
     private void updateView() {
-        switch (mState) {
-            case LOAD_ON:
-            case LOAD_OFF:
+        switch (mShiftHelper.getState()) {
+            case LOADING:
                 mBtnToggleShift.setText(R.string.loading);
                 break;
             case SHIFT_OFF:
@@ -111,21 +84,12 @@ public class ShiftControlView extends FrameLayout {
     }
 
 
-    private class BroadcastReceiverShiftChangeImpl extends BroadcastReceiver {
+    private class ShiftStateHelperListenerImpl implements ShiftHelper.ShiftStateHelperListener
+    {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            updateState();
+        public void onStateChange(ShiftHelper shiftHelper, ShiftHelper.ShiftState state, ShiftHelper.ShiftState oldState) {
+            updateView();
         }
-    }
-
-    private void updateState() {
-        Shift shift = mShiftManager.getShift();
-        if (shift == null)
-            return;
-        if (shift.on)
-            setState(ShiftState.SHIFT_ON);
-        else
-            setState(ShiftState.SHIFT_OFF);
     }
 
 

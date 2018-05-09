@@ -1,18 +1,16 @@
 package com.bringg.exampleapp;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.PersistableBundle;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
+import driver_sdk.models.tasks.Task;
+import driver_sdk.models.tasks.Waypoint;
 
-public abstract class BaseActivity extends AppCompatActivity {
+public abstract class BaseActivity extends AppCompatActivity implements BringgProvider.BringgProviderListener {
     protected BringgProvider mBringgProvider;
     private AlertDialog mLoadingDialog;
 
@@ -21,11 +19,15 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         if (getApplication() instanceof BringgApp) {
             mBringgProvider = ((BringgApp) getApplication()).getBringg();
+            mBringgProvider.addListener(this);
         }
     }
 
-    protected boolean isLoggedIn() {
-        return mBringgProvider.getClient().getUserId() != EMPTY_USER;
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBringgProvider != null)
+            mBringgProvider.removeListener(this);
     }
 
     protected void showLoadingProgress() {
@@ -44,5 +46,41 @@ public abstract class BaseActivity extends AppCompatActivity {
             return;
         mLoadingDialog.dismiss();
         mLoadingDialog = null;
+    }
+
+
+    public BringgProvider getBringProvider() {
+        return mBringgProvider;
+    }
+
+
+    @Override
+    public void onShiftEnded() {
+
+    }
+
+    @Override
+    public void onTaskAdded(Task newTask) {
+
+    }
+
+    @Override
+    public void onTaskStarted(Task remoteTask) {
+
+    }
+
+    @Override
+    public void onTaskRemoved(long taskId) {
+
+    }
+
+    @Override
+    public void onWayPointArrived(Waypoint waypoint) {
+
+    }
+
+    @Override
+    public void onUserLoggedOut() {
+
     }
 }

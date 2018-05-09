@@ -21,11 +21,32 @@
             android:background="@color/colorPrimary"
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"/>
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycle_view"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"></android.support.v7.widget.RecyclerView>
+            android:layout_weight="1">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recycle_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    ></android.support.v7.widget.RecyclerView>
+
+                <TextView
+                    android:id="@+id/tv_empty_list_task"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/no_task"/>
+            </FrameLayout>
+        </android.support.v4.widget.SwipeRefreshLayout>
+
+        <include layout="@layout/divider"></include>
 
         <com.bringg.exampleapp.views.ShiftControlView
             android:layout_width="match_parent"
@@ -40,6 +61,6 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header"
-        app:menu="@menu/drawer_view_shift_off"/>
+        app:menu="@menu/drawer_view_shift"/>
 
 </android.support.v4.widget.DrawerLayout>

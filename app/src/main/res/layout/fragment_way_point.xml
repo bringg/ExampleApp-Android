@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:app="http://schemas.android.com/apk/res-auto"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:padding="16dp"
+             tools:context=".tasks.TaskActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/drw_card_background"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_way_point_address"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:drawablePadding="16dp"
+            android:drawableRight="@drawable/ic_near_me_white_36dp"
+            android:gravity="center_vertical"
+            android:text="Address"
+            android:textSize="16sp"/>
+
+        <include layout="@layout/divider"></include>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:text="@string/scheduled_for"/>
+
+        <TextView
+            android:id="@+id/tv_way_point_scheduled_for"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:text="00:00"
+            android:textColor="@color/white"
+            android:textStyle="bold"/>
+
+        <include layout="@layout/divider"></include>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:paddingTop="8dp">
+
+            <ImageView
+                android:id="@+id/img_way_point_user"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/drw_empty_white_circle"
+                android:padding="2dp"
+                android:src="@drawable/ic_person"/>
+
+            <TextView
+                android:id="@+id/tv_way_point_user_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="72dp"
+                android:text="Name"/>
+
+            <ImageView
+                android:id="@+id/btn_way_point_contact_phone"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_vertical|right"
+                android:padding="8dp"
+                android:src="@drawable/ic_phone_white_36dp"/>
+
+            <ImageView
+                android:id="@+id/btn_way_point_contact_message"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_vertical|right"
+
+                android:layout_marginRight="56dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_message_white_36dp"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_way_point_action"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:text="@string/start_order"/>
+</FrameLayout>

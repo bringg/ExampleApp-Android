@@ -52,6 +52,8 @@ public class LoginActivity extends BaseActivity {
 
     }
 
+
+
     private void findViews() {
         mRgLoginType = (RadioGroup) findViewById(R.id.rg_login_type);
         mViewMailLogin = (LoginWithEmailView) findViewById(R.id.v_login_with_mail);

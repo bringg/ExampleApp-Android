@@ -1,10 +1,12 @@
-package com.bringg.exampleapp;
+package com.bringg.exampleapp.shifts;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
+
+import com.bringg.exampleapp.BringgProvider;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -2,31 +2,38 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
-             android:padding="16dp">
+             android:padding="8dp">
 
-    <LinearLayout android:orientation="vertical"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="96dp"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginBottom="0dp"
+        android:layout_height="104dp"
         android:background="@drawable/drw_card_background"
+        android:orientation="vertical"
         android:padding="16dp"
         >
 
 
         <TextView
-            android:id="@+id/tv_task_title"
+            android:id="@+id/tv_task_address"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="left"
             />
 
         <TextView
             android:id="@+id/tv_task_date_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="left"
             />
+
+        <TextView
+            android:id="@+id/tv_task_title"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="left"
+            android:gravity="bottom|left"
+            android:textSize="16sp"/>
     </LinearLayout>
 
 

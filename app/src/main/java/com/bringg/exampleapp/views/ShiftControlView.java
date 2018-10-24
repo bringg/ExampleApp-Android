@@ -2,11 +2,13 @@ package com.bringg.exampleapp.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.shifts.ShiftHelper;
@@ -17,11 +19,10 @@ import com.bringg.exampleapp.shifts.ShiftHelper;
 public class ShiftControlView extends FrameLayout {
 
 
-
     private Button mBtnToggleShift;
     private TextView mTvShiftState;
     private ShiftHelper mShiftHelper;
-    ShiftHelper.ShiftStateHelperListener mShiftStateHelperListener=new ShiftStateHelperListenerImpl();
+    ShiftHelper.ShiftStateHelperListener mShiftStateHelperListener = new ShiftStateHelperListenerImpl();
 
 
     public ShiftControlView(Context context) {
@@ -42,25 +43,26 @@ public class ShiftControlView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mShiftHelper.start();
+        mShiftHelper.register();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mShiftHelper.stop();
+        mShiftHelper.unregister();
 
     }
 
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_shift_control, this, true);
 
-        mShiftHelper =new ShiftHelper(getContext(),mShiftStateHelperListener);
+        mShiftHelper = new ShiftHelper(getContext(), mShiftStateHelperListener);
         mTvShiftState = (TextView) findViewById(R.id.tv_shift_state);
         mBtnToggleShift = (Button) findViewById(R.id.btn_toggle_shift);
         mBtnToggleShift.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                mBtnToggleShift.setEnabled(false);
                 mShiftHelper.toggleShift();
             }
         });
@@ -69,9 +71,6 @@ public class ShiftControlView extends FrameLayout {
 
     private void updateView() {
         switch (mShiftHelper.getState()) {
-            case LOADING:
-                mBtnToggleShift.setText(R.string.loading);
-                break;
             case SHIFT_OFF:
                 mBtnToggleShift.setText(R.string.start_shift);
                 mTvShiftState.setText(R.string.not_in_shift);
@@ -84,11 +83,17 @@ public class ShiftControlView extends FrameLayout {
     }
 
 
-    private class ShiftStateHelperListenerImpl implements ShiftHelper.ShiftStateHelperListener
-    {
+    private class ShiftStateHelperListenerImpl implements ShiftHelper.ShiftStateHelperListener {
         @Override
-        public void onStateChange(ShiftHelper shiftHelper, ShiftHelper.ShiftState state, ShiftHelper.ShiftState oldState) {
+        public void onStateChanged(ShiftHelper shiftHelper, ShiftHelper.ShiftState state, ShiftHelper.ShiftState oldState) {
+            mBtnToggleShift.setEnabled(true);
+
             updateView();
+        }
+
+        @Override
+        public void onError(String message) {
+            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
         }
     }
 

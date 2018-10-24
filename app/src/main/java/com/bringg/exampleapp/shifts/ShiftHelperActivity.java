@@ -1,33 +1,36 @@
 package com.bringg.exampleapp.shifts;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.bringg.exampleapp.BaseActivity;
-import com.bringg.exampleapp.shifts.ShiftHelper;
+
+import driver_sdk.connection.services.RequestQueueService;
 
 import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
 
 abstract public class ShiftHelperActivity extends BaseActivity {
-    private ShiftHelper mShiftHelper;
+    private static ShiftHelper mShiftHelper;
     private ShiftHelper.ShiftStateHelperListener mShiftStateHelperListener = new ShiftStateHelperListenerImpl();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mShiftHelper = new ShiftHelper(this, mShiftStateHelperListener);
+        if (mShiftHelper == null)
+            mShiftHelper = new ShiftHelper(this, mShiftStateHelperListener);
 
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mShiftHelper.start();
+        mShiftHelper.register();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mShiftHelper.stop();
+        mShiftHelper.unregister();
     }
 
     protected void toggleShift() {
@@ -37,17 +40,29 @@ abstract public class ShiftHelperActivity extends BaseActivity {
     protected abstract void notifyShiftStateChanged(ShiftHelper.ShiftState state);
 
     protected boolean isLoggedIn() {
-        return mBringgProvider.getClient().getUserId() != EMPTY_USER;
+        return  mBringgProvider.getClient().loginState().isLoggedIn();
     }
 
     protected ShiftHelper.ShiftState getShiftState() {
         return mShiftHelper.getState();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mShiftHelper.getState() != ShiftHelper.ShiftState.SHIFT_ON)
+            stopService(new Intent(this, RequestQueueService.class));
+    }
+
     private class ShiftStateHelperListenerImpl implements ShiftHelper.ShiftStateHelperListener {
         @Override
-        public void onStateChange(ShiftHelper shiftHelper, ShiftHelper.ShiftState state, ShiftHelper.ShiftState oldState) {
+        public void onStateChanged(ShiftHelper shiftHelper, ShiftHelper.ShiftState state, ShiftHelper.ShiftState oldState) {
             notifyShiftStateChanged(state);
+        }
+
+        @Override
+        public void onError(String message) {
+            toast(message);
         }
     }
 }

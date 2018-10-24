@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.bringg.exampleapp.BringgApp;
+import com.bringg.exampleapp.R;
+import com.bringg.exampleapp.utils.Utils;
 
 import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.shift.Shift;
@@ -17,8 +19,7 @@ public class ShiftHelper {
 
     public enum ShiftState {
         SHIFT_ON,
-        SHIFT_OFF,
-        LOADING
+        SHIFT_OFF
     }
 
     private final Context mContext;
@@ -37,15 +38,21 @@ public class ShiftHelper {
     }
 
     public void toggleShift() {
+        if (!Utils.isNetworkAvailable(mContext)) {
+            if (mListener != null)
+                mListener.onError(mContext.getString(R.string.no_internet_connection));
+            return;
+        }
         if (mShiftManager.getShift() == null)
             return;
         if (mShiftManager.getShift().on) {
             mShiftManager.updateShiftState(false);
-            setState(ShiftState.LOADING);
+            setState(ShiftState.SHIFT_OFF);
         } else {
             mShiftManager.updateShiftState(true);
-            setState(ShiftState.LOADING);
+            setState(ShiftState.SHIFT_ON);
         }
+
     }
 
 
@@ -53,7 +60,7 @@ public class ShiftHelper {
         return mState;
     }
 
-    public void start() {
+    public void register() {
         if (!mIsStart) {
             mIsStart = true;
             LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, ShiftManager.getIntentFilterShiftChanged());
@@ -61,7 +68,7 @@ public class ShiftHelper {
         }
     }
 
-    public void stop() {
+    public void unregister() {
         if (mIsStart) {
             LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
             mIsStart = false;
@@ -84,31 +91,33 @@ public class ShiftHelper {
             return;
         ShiftState oldState = mState;
         mState = state;
-        if (mState == ShiftState.SHIFT_ON)
-            startShiftService();
-        else if (mState == ShiftState.SHIFT_OFF) {
-            stopShiftService();
-            stopQueueService();
-        }
+        updateServicesByState();
         if (mListener != null)
-            mListener.onStateChange(this, mState, oldState);
+            mListener.onStateChanged(this, mState, oldState);
     }
 
-    private void stopQueueService() {
-        mContext.stopService(new Intent(mContext, RequestQueueService.class));
+    private void updateServicesByState() {
+        if (mState == ShiftState.SHIFT_ON) {
+            startShiftService();
+        } else if (mState == ShiftState.SHIFT_OFF) {
+            stopShiftService();
+        }
     }
+
 
     private void startShiftService() {
         mContext.startService(new Intent(mContext, ShiftService.class));
     }
 
-    private void stopShiftService() {
+    public void stopShiftService() {
         mContext.stopService(new Intent(mContext, ShiftService.class));
 
     }
 
     public interface ShiftStateHelperListener {
-        void onStateChange(ShiftHelper shiftHelper, ShiftState state, ShiftState oldState);
+        void onStateChanged(ShiftHelper shiftHelper, ShiftState state, ShiftState oldState);
+
+        void onError(String string);
     }
 
     private class BroadcastReceiverShiftChangeImpl extends BroadcastReceiver {

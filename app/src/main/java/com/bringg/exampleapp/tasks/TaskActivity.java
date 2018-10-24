@@ -6,8 +6,10 @@ import android.content.Intent;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -24,19 +26,19 @@ import driver_sdk.models.tasks.Waypoint;
 
 public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 
-    protected static final String EXTRA_TASK = "com.bringg.exampleapp.tasks.EXTRA_TASK";
+    private static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
 
-    private boolean mIsStartShiftForTask;
     private Task mTask;
     private Button mBtnStartTask;
     private ViewPager mViewPager;
     private MyPagerAdapter mAdapterViewPager;
     private List<WayPointFragment> mListFragments;
     private TaskHelper mTaskHelper;
+    private Toolbar mToolBar;
 
-    public static Intent getIntent(Context context, Task task) {
+    public static Intent getIntent(Context context, long taskId) {
         Intent intent = new Intent(context, TaskActivity.class);
-        intent.putExtra(EXTRA_TASK, task);
+        intent.putExtra(EXTRA_TASK_ID, taskId);
         return intent;
     }
 
@@ -44,7 +46,12 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task);
-        mTask = getIntent().getParcelableExtra(EXTRA_TASK);
+
+        long taskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
+        if (taskId == 0)
+            finish();
+        mTask = mBringgProvider.getClient().taskActions().getTaskById(taskId);
+        initActionBar();
         findViews();
         initViews();
         mTaskHelper = new TaskHelper(this, mTask, new TaskHelperListenerImpl());
@@ -52,10 +59,24 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
     }
 
     @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
+    private void initActionBar() {
+        mToolBar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolBar);
+        ActionBar actionbar = getSupportActionBar();
+        actionbar.setDisplayHomeAsUpEnabled(true);
+        actionbar.setHomeAsUpIndicator(R.drawable.baseline_arrow_back_white_24dp);
+        getSupportActionBar().setTitle(mTask.getTitle());
+    }
+
+    @Override
     protected void notifyShiftStateChanged(ShiftHelper.ShiftState state) {
-        if (mIsStartShiftForTask && state == ShiftHelper.ShiftState.SHIFT_ON) {
-            mTaskHelper.startTask();
-            mIsStartShiftForTask = false;
+        if (state == ShiftHelper.ShiftState.SHIFT_ON) {
+
         }
     }
 
@@ -72,7 +93,6 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
                 return;
         }
         updateCurrentFragment();
-
     }
 
     private void initViews() {
@@ -116,6 +136,13 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
             public void onPageScrollStateChanged(int state) {
             }
         });
+        List<Waypoint> wayPoints = mTask.getWayPoints();
+        for (int i = 0; i < wayPoints.size(); i++) {
+            if (!wayPoints.get(i).isDone()) {
+              scrollToFragmentByWayPointId(wayPoints.get(i ).getId());
+                break;
+            }
+        }
     }
 
     private List<WayPointFragment> createFragments() {
@@ -133,7 +160,6 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
                 setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mIsStartShiftForTask = true;
                         toggleShift();
                     }
                 }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -204,7 +230,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return mTask.getWayPoints().get(position).companyName;
+            return mTask.getWayPoints().get(position).getCompanyName();
         }
     }
 

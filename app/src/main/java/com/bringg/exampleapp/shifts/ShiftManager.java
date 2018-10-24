@@ -3,7 +3,7 @@ package com.bringg.exampleapp.shifts;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Handler;
+import android.os.ResultReceiver;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.bringg.exampleapp.BringgProvider;
@@ -12,12 +12,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import driver_sdk.LeanBringgSDKClient;
+import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.shift.EndShiftCallback;
 import driver_sdk.shift.GetShiftResultCallback;
 import driver_sdk.shift.Shift;
 import driver_sdk.shift.StartShiftResultCallback;
-
-import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
 
 public class ShiftManager {
 
@@ -29,7 +28,7 @@ public class ShiftManager {
 
 
     private ShiftResultCallbackImpl mShiftResultCallback;
-    private Context mContex;
+    private Context mContext;
 
 
     public static IntentFilter getIntentFilterShiftChanged() {
@@ -37,35 +36,40 @@ public class ShiftManager {
     }
 
     public ShiftManager(Context context, BringgProvider bringgProvider) {
-        mContex = context;
+        mContext = context;
         mClient = bringgProvider.getClient();
         mShiftResultCallback = new ShiftResultCallbackImpl();
-        if (mClient.getUserId() != EMPTY_USER)
-            load();
-
     }
 
     public Shift getShift() {
-        return mClient.getShift();
+        return mClient.shiftActions().getShift();
     }
 
     public void load() {
-        mClient.getShiftStatusFromRemote(mShiftResultCallback);
+        mClient.shiftActions().getShiftStatusFromRemote(mShiftResultCallback);
     }
 
     public void updateShiftState(boolean inShift) {
         if (inShift)
-            mClient.startShiftAndWaitForApproval(true, mShiftResultCallback);
+            mClient.shiftActions().startShiftAndWaitForApproval(true, mShiftResultCallback);
         else
-            mClient.endShift(mShiftResultCallback);
+            mClient.shiftActions().endShift(mShiftResultCallback);
     }
 
     private void notifyShiftUpdate(Shift shift) {
         Intent intent = new Intent();
         intent.setAction(ACTION_SHIFT_CHANGE);
         intent.putExtra(EXTRA_IN_SHIFT, shift.on);
-        LocalBroadcastManager.getInstance(mContex).sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
 
+    }
+
+    private void resumeQueueService() {
+        RequestQueueService.resume(mContext, new ResultReceiver(null));
+    }
+
+    private void pauseQueueService() {
+        mContext.stopService(new Intent(mContext, RequestQueueService.class));
     }
 
     private class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
@@ -73,7 +77,6 @@ public class ShiftManager {
         @Override
         public void onGetShiftStatusResult(@NotNull Shift shift) {
             notifyShiftUpdate(shift);
-
         }
 
         @Override
@@ -83,22 +86,24 @@ public class ShiftManager {
 
         @Override
         public void onShiftStarted() {
+            resumeQueueService();
             notifyShiftUpdate(getShift());
-
         }
 
         @Override
         public void onShiftStartFailed(int responseCode) {
-
+            pauseQueueService();
         }
 
         @Override
         public void onEndShiftSuccess() {
+            pauseQueueService();
             notifyShiftUpdate(getShift());
         }
 
         @Override
         public void onEndShiftFailure(int error) {
+            pauseQueueService();
 
         }
 

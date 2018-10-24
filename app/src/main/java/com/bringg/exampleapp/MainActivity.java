@@ -1,7 +1,10 @@
 package com.bringg.exampleapp;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -13,10 +16,12 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bringg.exampleapp.adapters.TasksAdapter;
+import com.bringg.exampleapp.database.Pref;
 import com.bringg.exampleapp.login.LoginActivity;
 import com.bringg.exampleapp.shifts.ShiftHelper;
 import com.bringg.exampleapp.shifts.ShiftHelperActivity;
@@ -25,15 +30,19 @@ import com.bringg.exampleapp.utils.CircleTransform;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.models.User;
 import driver_sdk.models.tasks.Task;
 import driver_sdk.tasks.GetTasksResultCallback;
+import driver_sdk.tasks.OpenTasksResult;
+import driver_sdk.tasks.RefreshTasksResultCallback;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class MainActivity extends ShiftHelperActivity {
+public class MainActivity extends DebugActivity {
 
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
     private static final int REQUEST_CODE_TASK_ACTIVITY = 2;
@@ -47,6 +56,7 @@ public class MainActivity extends ShiftHelperActivity {
     private TasksAdapter mTasksAdapter;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View mTvListEmpty;
+    private TasksResultCallbackImpl mTasksResultCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,13 +97,11 @@ public class MainActivity extends ShiftHelperActivity {
                 mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(false);
                 mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(true);
                 break;
-            case LOADING:
-                showLoadingProgress();
-                break;
         }
     }
 
     private void initSwipeRefresItem() {
+        mTasksResultCallback = new TasksResultCallbackImpl();
         mSwipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -104,33 +112,45 @@ public class MainActivity extends ShiftHelperActivity {
     }
 
     private void refreshItems() {
+        mSwipeRefreshLayout.setRefreshing(true);
         showLoadingProgress();
         mTvListEmpty.setVisibility(View.GONE);
-
         mTasks.clear();
-        mBringgProvider.getClient().getTasks(new TasksResultCallbackImpl());
+        mBringgProvider.getClient().taskActions().refreshTasks(mTasksResultCallback);
 
     }
 
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
+    //FIXME this append on mainThread wrong method call
     private void onUserLogin() {
-        User user = mBringgProvider.getClient().getUser();
+        getUser();
+
+        refreshItems();
+    }
+
+    //FIXME get user return 401
+    private void getUser() {
+        User user = mBringgProvider.getClient().user().getCurrentUser();
         mTvUserName.setText(user.getName());
         String img = user.getImageUrl();
         if (!TextUtils.isEmpty(img)) {
             if (!img.contains("http"))
                 img = new StringBuilder(BASE_HOST).append(img).toString();
-            Picasso.with(this).load(img).transform(new CircleTransform()).into(mImgUser);
+            Picasso.with(MainActivity.this).load(img).transform(new CircleTransform()).into(mImgUser);
         }
-        refreshItems();
+
 
     }
 
+    @Override
+    public void onTasksUpdated(@NonNull Collection<Task> collection) {
+        super.onTasksUpdated(collection);
+        mTasksResultCallback.onTaskResult(new ArrayList<>(collection));
+    }
+    @Override
+    public void onTasksLoaded(@NonNull Collection<Task> collection) {
+        super.onTasksUpdated(collection);
+        mTasksResultCallback.onTaskResult(new ArrayList<>(collection));
+    }
     private void initRecycleView() {
         mRecycleView = findViewById(R.id.recycle_view);
         LinearLayoutManager lm = new LinearLayoutManager(this);
@@ -177,11 +197,9 @@ public class MainActivity extends ShiftHelperActivity {
     }
 
     private void logOut() {
-        mBringgProvider.getClient().logout();
+        mBringgProvider.getClient().loginActions().logout();
         startLoginActivityForResult();
-
     }
-
 
     private void initActionBar() {
         mToolBar = findViewById(R.id.toolbar);
@@ -189,6 +207,26 @@ public class MainActivity extends ShiftHelperActivity {
         ActionBar actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
         actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp);
+        findViewById(R.id.btn_delete).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               /* LoggerDebug.get().clear();
+                Intent intent = new Intent(MainActivity.this, RequestQueueService.class);
+                intent.setAction(ACTION_DELETE_DB);
+                startService(intent);*/
+            }
+        });
+        findViewById(R.id.btn_log).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.yossibarel.logger");
+                if (launchIntent != null) {
+                    startActivity(launchIntent);//null pointer check in case package name was not found
+                }
+            }
+        });
+
+
     }
 
     @Override
@@ -205,7 +243,6 @@ public class MainActivity extends ShiftHelperActivity {
                 refreshItems();
                 break;
         }
-
     }
 
 
@@ -214,14 +251,13 @@ public class MainActivity extends ShiftHelperActivity {
         @Override
         public void onItemSelected(Task task) {
 
-            startActivityForResult(TaskActivity.getIntent(MainActivity.this, task), REQUEST_CODE_TASK_ACTIVITY);
+            startActivityForResult(TaskActivity.getIntent(MainActivity.this, task.getId()), REQUEST_CODE_TASK_ACTIVITY);
         }
     }
 
-    private class TasksResultCallbackImpl implements GetTasksResultCallback {
+    private class TasksResultCallbackImpl implements GetTasksResultCallback, RefreshTasksResultCallback {
 
-        @Override
-        public void onTasksResult(List<Task> tasks, long lastTimeUpdated) {
+        public void onTaskResult(List<Task> tasks) {
             if (isFinishing())
                 return;
             hideLoadingProgress();
@@ -233,9 +269,38 @@ public class MainActivity extends ShiftHelperActivity {
                 mRecycleView.setVisibility(View.VISIBLE);
             }
             mSwipeRefreshLayout.setRefreshing(false);
+            mTasks.clear();
             mTasks.addAll(tasks);
             mTasksAdapter.notifyDataSetChanged();
         }
+
+        @Override
+        public void onTasksResult(List<Task> tasks, long lastTimeUpdated) {
+            onTaskResult(tasks);
+        }
+
+        @Override
+        public void onRefreshTasksFailure(int error) {
+            if (isFinishing())
+                return;
+            hideLoadingProgress();
+            toast("error");
+        }
+
+        @Override
+        public void onRefreshTasksSuccess(OpenTasksResult openTasksResult) {
+
+            onTaskResult(openTasksResult.getTasks());
+        }
     }
+
+    class Butoon1OnClickImpl implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+
+        }
+    }
+
 
 }

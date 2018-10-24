@@ -1,6 +1,7 @@
 package com.bringg.exampleapp.tasks;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.BringgProvider;
@@ -28,7 +29,7 @@ public class TaskHelper {
 
 
     public enum TaskState {
-        NOT_STARTED,ACCEPTED, STARTED, DONE
+        NOT_STARTED, ACCEPTED, STARTED, DONE
     }
 
     public enum WayPointState {
@@ -75,7 +76,6 @@ public class TaskHelper {
         Waypoint waypoint = mTask.getWayPointById(wayPointId);
         if (waypoint == null)
             return WayPointState.UNKNOWN;
-
         if (waypoint.isDone())
             return WayPointState.LEAVE;
         if (!waypoint.isStarted())
@@ -88,35 +88,32 @@ public class TaskHelper {
     public void startTask() {
         if (mTask.isStarted())
             return;
-        mBringgProvider.getClient().startTask(mTask.getId(), new TaskActionCallbackImpl());
+        mBringgProvider.getClient().taskActions().startTask(mTask.getId(), new TaskActionCallbackImpl());
     }
 
     private void startWayPoint(long wayPointId) {
         Waypoint waypoint = mTask.getWayPointById(wayPointId);
         if (waypoint == null)
             return;
-        waypoint.setStatus(STATUS_STARTED);
         if (mListener != null)
             mListener.onWayPointStateChanged(wayPointId, WayPointState.STARTED);
     }
 
     public void arriveWayPoint(long wayPointId) {
-        mBringgProvider.getClient().arriveToWayPoint(mTask.getId(), wayPointId, new WayPointActionCallbackImpl(wayPointId));
+        mBringgProvider.getClient().taskActions().arriveToWayPoint(mTask.getId(), wayPointId, new WayPointActionCallbackImpl(wayPointId));
 
     }
 
     private void notifyArriveWayPoint(long wayPointId) {
-        mTask.getWayPointById(wayPointId).setStatus(STATUS_CHECKED_IN);
         if (mListener != null)
             mListener.onWayPointStateChanged(wayPointId, WayPointState.ARRIVE);
     }
 
     public void leaveWayPoint(long wayPointId) {
-        mBringgProvider.getClient().leaveWayPoint(mTask.getId(), wayPointId, new LeaveWayPointActionCallbackImpl(wayPointId));
+        mBringgProvider.getClient().taskActions().leaveWayPoint(mTask.getId(), wayPointId, new LeaveWayPointActionCallbackImpl(wayPointId));
     }
 
     private void notifyLeaveWayPoint(long wayPointId) {
-        mTask.getWayPointById(wayPointId).setStatus(STATUS_DONE);
         if (mListener != null) {
             mListener.onWayPointStateChanged(wayPointId, WayPointState.LEAVE);
         }

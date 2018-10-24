@@ -42,12 +42,15 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
 
     class TaskViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView mTvTitle;
+        private final TextView mTvAddress;
         private final TextView mTvDateStart;
+        private final TextView mTvTitle;
 
         public TaskViewHolder(View itemView) {
             super(itemView);
+            mTvAddress = itemView.findViewById(R.id.tv_task_address);
             mTvTitle = itemView.findViewById(R.id.tv_task_title);
+
             mTvDateStart = itemView.findViewById(R.id.tv_task_date_start);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -59,8 +62,10 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         }
 
         public void onBind(Task task) {
-            mTvTitle.setText(task.getExtendedAddress());
+            task.getPickupDropOffType()
+            mTvAddress.setText(task.getExtendedAddress());
             mTvDateStart.setText(Utils.isoToStringDate(task.getScheduledAt()));
+            mTvTitle.setText(task.getTitle());
         }
     }
 

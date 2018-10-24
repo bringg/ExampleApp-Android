@@ -40,7 +40,7 @@ public class Pref {
                 putBoolean(BringgSchema.COL_DEBUG, user.isDebug()).
                 putString(BringgSchema.COL_EMAIL, user.getEmail()).
                 putString(BringgSchema.COL_AUTHENTICATION_TOKEN, user.getAuthenticationToken()).
-                commit();
+                apply();
 
     }
 

@@ -6,16 +6,17 @@
     android:layout_height="match_parent"
     tools:context=".login.LoginActivity">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center">
+        android:layout_gravity="center"
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -29,7 +30,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <RadioButton
                     android:id="@+id/rb_email"
@@ -44,16 +45,24 @@
                     android:layout_height="wrap_content"
                     android:text="@string/phone_number">
                 </RadioButton>
+
+                <RadioButton
+                    android:id="@+id/rb_qr_code"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qr_code">
+                </RadioButton>
             </RadioGroup>
 
         </LinearLayout>
 
-        <com.bringg.exampleapp.login.LoginWithPhoneView android:visibility="gone"
+        <com.bringg.exampleapp.login.LoginWithPhoneView
             android:id="@+id/v_login_with_phone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="48dp"></com.bringg.exampleapp.login.LoginWithPhoneView>
+            android:layout_marginTop="16dp"
+            android:visibility="gone"></com.bringg.exampleapp.login.LoginWithPhoneView>
 
         <com.bringg.exampleapp.login.LoginWithEmailView
             android:id="@+id/v_login_with_mail"
@@ -61,8 +70,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="48dp"></com.bringg.exampleapp.login.LoginWithEmailView>
+            android:layout_marginTop="16dp"></com.bringg.exampleapp.login.LoginWithEmailView>
 
 
-    </FrameLayout>
+    </LinearLayout>
 </FrameLayout>

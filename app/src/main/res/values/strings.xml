@@ -34,6 +34,9 @@
     <string name="leave">Leave</string>
     <string name="completed">Completed</string>
     <string name="no_task">No tasks available</string>
-
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="qr_code">QR Code</string>
+    <string name="notification_in_shift_title">Shift ON</string>
+    <string name="notification_in_shift_message">You are in shift</string>
 
 </resources>

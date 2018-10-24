@@ -114,8 +114,8 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
         if (waypoint != null) {
             mTvAddress.setText(waypoint.getAddress());
             mTvScheduledFor.setText(Utils.isoToStringDate(waypoint.getScheduledAt()));
-            mTvUserName.setText(waypoint.customer.name);
-            String imgUrl = waypoint.customer.imageUrl;
+            mTvUserName.setText(waypoint.getCustomer().name);
+            String imgUrl = waypoint.getCustomer().imageUrl;
             if (TextUtils.isEmpty(imgUrl))
                 return;
             if (!imgUrl.contains("http"))
@@ -239,7 +239,7 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
     private void makeCall() {
         if (getWayPoint() == null)
             return;
-        String number = "tel:" + getWayPoint().phone;
+        String number = "tel:" + getWayPoint().getPhone();
         Intent callIntent = new Intent(Intent.ACTION_CALL, Uri.parse(number));
         startActivity(callIntent);
     }
@@ -250,7 +250,7 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
         Intent intent = new Intent(Intent.ACTION_VIEW);
 
         intent.setType("vnd.android-dir/mms-sms");
-        intent.putExtra("address", getWayPoint().phone);
+        intent.putExtra("address", getWayPoint().getPhone());
         intent.putExtra("sms_body", "message");
 
         startActivity(intent);
@@ -260,7 +260,7 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
         if (getWayPoint() == null)
             return;
         Intent intent = new Intent(android.content.Intent.ACTION_VIEW,
-                Uri.parse(new StringBuilder("geo:").append(getWayPoint().lat).append(",").append(getWayPoint().lng).toString()));
+                Uri.parse(new StringBuilder("geo:").append(getWayPoint().getLat()).append(",").append(getWayPoint().getLng()).toString()));
         startActivity(intent);
     }
 

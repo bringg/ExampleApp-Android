@@ -2,7 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
           package="com.bringg.exampleapp">
-
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="22" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CALL_PHONE"></uses-permission>
 
@@ -24,9 +30,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".login.LoginActivity">
+        <activity
+            android:name=".utils.ScannerActivity"
+            android:screenOrientation="portrait"></activity>
+        <activity
+            android:name=".login.LoginActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".tasks.TaskActivity">
+        <activity
+            android:name=".tasks.TaskActivity"
+            android:screenOrientation="portrait">
         </activity>
 
         <service

@@ -4,6 +4,9 @@ import android.app.Application;
 
 import com.bringg.exampleapp.shifts.ShiftManager;
 
+
+
+
 public class BringgApp extends Application {
 
     private BringgProvider mBringgProvider;
@@ -12,10 +15,10 @@ public class BringgApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
         mBringgProvider = new BringgProvider(this);
         mShiftManager = new ShiftManager(this, mBringgProvider);
-
+        if (getBringg().getClient().loginState().isLoggedIn())
+            mShiftManager.load();
     }
 
 

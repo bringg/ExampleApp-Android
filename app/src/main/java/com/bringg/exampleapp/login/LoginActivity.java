@@ -1,15 +1,23 @@
 package com.bringg.exampleapp.login;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
 
 import com.bringg.exampleapp.BaseActivity;
 import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
+import com.bringg.exampleapp.utils.ScannerActivity;
 import com.bringg.exampleapp.views.dialogs.ListItemDialog;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Locale;
 import java.util.Map;
@@ -20,6 +28,8 @@ import driver_sdk.models.User;
 
 public class LoginActivity extends BaseActivity {
 
+    private static final int REQ_CODE_QR_SCANNER = 22;
+    public static final String TAG = LoginActivity.class.getSimpleName();
     private RadioGroup mRgLoginType;
     private LoginWithEmailView mViewMailLogin;
     private LoginWithPhoneView mViewPhoneLogin;
@@ -32,7 +42,8 @@ public class LoginActivity extends BaseActivity {
 
     enum TypeLogin {
         EMAIL,
-        PHONE
+        PHONE,
+        QR_CODE
 
     }
 
@@ -52,17 +63,20 @@ public class LoginActivity extends BaseActivity {
 
     }
 
-
+    @Override
+    protected void onRequestCameraResult(boolean allow) {
+        if (allow)
+            startQrCodeActivity();
+    }
 
     private void findViews() {
         mRgLoginType = (RadioGroup) findViewById(R.id.rg_login_type);
         mViewMailLogin = (LoginWithEmailView) findViewById(R.id.v_login_with_mail);
         mViewPhoneLogin = (LoginWithPhoneView) findViewById(R.id.v_login_with_phone);
-
-
     }
 
     private void initViews() {
+        mTypeLogin = TypeLogin.EMAIL;
         mRgLoginType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -73,6 +87,9 @@ public class LoginActivity extends BaseActivity {
                         break;
                     case R.id.rb_phone:
                         typeLogin = TypeLogin.PHONE;
+                        break;
+                    case R.id.rb_qr_code:
+                        typeLogin = TypeLogin.QR_CODE;
                         break;
                 }
                 setTypeLogin(typeLogin);
@@ -96,6 +113,54 @@ public class LoginActivity extends BaseActivity {
                 mViewPhoneLogin.setVisibility(View.VISIBLE);
                 mViewMailLogin.setVisibility(View.GONE);
                 break;
+            case QR_CODE:
+                if (!askCameraPermission())
+                    startQrCodeActivity();
+                break;
+        }
+    }
+
+    private void startQrCodeActivity() {
+
+        Intent intent = new Intent(this, ScannerActivity.class);
+        startActivityForResult(intent, REQ_CODE_QR_SCANNER);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && requestCode == REQ_CODE_QR_SCANNER) {
+            if (data != null) {
+                String scanTex = data.getStringExtra(ScannerActivity.EXTRA_SCAN_RESULT);
+                loginWithQR(scanTex);
+            } else Log.e(TAG, "onActivityResult data = null");
+
+        }
+    }
+
+    private void loginWithPhone(String merchantId) {
+        showLoadingProgress();
+        mBringgProvider.getClient().loginActions().loginWithCredentials(null, mPhone, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+
+    }
+
+    private void loginWithMail(String merchantId) {
+        showLoadingProgress();
+
+        mBringgProvider.getClient().loginActions().loginWithCredentials(mEmail, null, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+
+    }
+
+    private void loginWithQR(String scanTex) {
+        try {
+            Log.d(TAG, scanTex);
+            JSONObject jScan = new JSONObject(scanTex);
+            String token = jScan.getString("token");
+            String secret = jScan.getString("secret");
+            String region = jScan.getString("region");
+            mBringgProvider.getClient().loginActions().loginWithQRCode(region, token, secret, mApiRequestCallback);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -133,22 +198,9 @@ public class LoginActivity extends BaseActivity {
 
         private void requestConfirmation(String phone) {
             showLoadingProgress();
-
-            mBringgProvider.getClient().requestConfirmation(phone, Locale.getDefault().getCountry(), mApiRequestCallback);
+            //TODO need to move to loginAction()
+            mBringgProvider.getClient().credentialsActions().requestConfirmation(phone, Locale.getDefault().getCountry(), mApiRequestCallback);
         }
-    }
-
-    private void loginWithPhone(String merchantId) {
-        showLoadingProgress();
-        mBringgProvider.getClient().loginWithCredentials(null, mPhone, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
-
-    }
-
-    private void loginWithMail(String merchantId) {
-        showLoadingProgress();
-
-        mBringgProvider.getClient().loginWithCredentials(mEmail, null, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
-
     }
 
     private class ApiRequestCallbackImpl implements RequestConfirmationCallback, LoginCallback {
@@ -171,7 +223,8 @@ public class LoginActivity extends BaseActivity {
 
         @Override
         public void onLoginFailed() {
-
+            hideLoadingProgress();
+            toast("Login failed");
         }
 
         @Override
@@ -182,9 +235,8 @@ public class LoginActivity extends BaseActivity {
         @Override
         public void onLoginSuccess() {
             hideLoadingProgress();
-            User user = mBringgProvider.getClient().getUser();
             if (getApplication() instanceof BringgApp) {
-                ((BringgApp)getApplication()).notifyLoginSuccess();
+                ((BringgApp) getApplication()).notifyLoginSuccess();
             }
             setResult(RESULT_OK);
             finish();

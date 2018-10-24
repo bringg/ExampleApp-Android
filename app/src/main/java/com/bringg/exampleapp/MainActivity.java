@@ -34,8 +34,10 @@ import java.util.Collection;
 import java.util.List;
 
 import driver_sdk.connection.services.RequestQueueService;
+
+import driver_sdk.models.CancellationReason;
+import driver_sdk.models.Task;
 import driver_sdk.models.User;
-import driver_sdk.models.tasks.Task;
 import driver_sdk.tasks.GetTasksResultCallback;
 import driver_sdk.tasks.OpenTasksResult;
 import driver_sdk.tasks.RefreshTasksResultCallback;
@@ -120,16 +122,16 @@ public class MainActivity extends DebugActivity {
 
     }
 
-    //FIXME this append on mainThread wrong method call
     private void onUserLogin() {
         getUser();
 
         refreshItems();
     }
 
-    //FIXME get user return 401
     private void getUser() {
         User user = mBringgProvider.getClient().user().getCurrentUser();
+        if (user == null)
+            return;
         mTvUserName.setText(user.getName());
         String img = user.getImageUrl();
         if (!TextUtils.isEmpty(img)) {
@@ -137,20 +139,52 @@ public class MainActivity extends DebugActivity {
                 img = new StringBuilder(BASE_HOST).append(img).toString();
             Picasso.with(MainActivity.this).load(img).transform(new CircleTransform()).into(mImgUser);
         }
-
-
     }
 
     @Override
-    public void onTasksUpdated(@NonNull Collection<Task> collection) {
-        super.onTasksUpdated(collection);
-        mTasksResultCallback.onTaskResult(new ArrayList<>(collection));
+    public void onTasksLoaded(@NonNull Collection<driver_sdk.models.Task> tasks) {
+        super.onTasksLoaded(tasks);
+        super.onTasksUpdated(tasks);
+        mTasksResultCallback.onTaskResult(new ArrayList<>(tasks));
     }
+
     @Override
-    public void onTasksLoaded(@NonNull Collection<Task> collection) {
+    public void onTasksUpdated(@NonNull Collection<driver_sdk.models.Task> collection) {
         super.onTasksUpdated(collection);
         mTasksResultCallback.onTaskResult(new ArrayList<>(collection));
     }
+
+    @Override
+    public void onTaskRemoved(long taskId) {
+        super.onTaskRemoved(taskId);
+        mTasks.remove(getLocalTaskById(taskId));
+        mTasksAdapter.notifyDataSetChanged();
+        if (mTasks.isEmpty())
+            mTvListEmpty.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onTaskCanceled(long taskId, @NonNull String s, @NonNull CancellationReason cancellationReason) {
+        super.onTaskCanceled(taskId, s, cancellationReason);
+        toast("Task canceled " + s + " " + cancellationReason.getReason());
+        onTaskRemoved(taskId);
+    }
+
+    private driver_sdk.models.Task getLocalTaskById(long taskId) {
+        for (Task task : mTasks) {
+            if (taskId == task.getId())
+                return task;
+        }
+        return null;
+    }
+
+    @Override
+    public void onTaskAdded(@NonNull Task task) {
+        super.onTaskAdded(task);
+        mTasks.add(task);
+        mTasksAdapter.notifyDataSetChanged();
+    }
+
     private void initRecycleView() {
         mRecycleView = findViewById(R.id.recycle_view);
         LinearLayoutManager lm = new LinearLayoutManager(this);
@@ -290,17 +324,7 @@ public class MainActivity extends DebugActivity {
         @Override
         public void onRefreshTasksSuccess(OpenTasksResult openTasksResult) {
 
-            onTaskResult(openTasksResult.getTasks());
+            onTaskResult((List<Task>) (Object) openTasksResult.getTasks());
         }
     }
-
-    class Butoon1OnClickImpl implements View.OnClickListener {
-
-        @Override
-        public void onClick(View v) {
-
-        }
-    }
-
-
 }

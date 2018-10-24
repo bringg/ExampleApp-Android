@@ -1,13 +1,15 @@
 package com.bringg.exampleapp;
 
 import android.app.Application;
+import android.location.Location;
 
 import com.bringg.exampleapp.shifts.ShiftManager;
 
+import driver_sdk.location.activityDetection.ActivityRecognitionListener;
+import driver_sdk.location.geofence.GeofenceReceiver;
 
 
-
-public class BringgApp extends Application {
+public class BringgApp extends Application  {
 
     private BringgProvider mBringgProvider;
     private ShiftManager mShiftManager;
@@ -33,4 +35,5 @@ public class BringgApp extends Application {
     public void notifyLoginSuccess() {
         mShiftManager.load();
     }
+
 }

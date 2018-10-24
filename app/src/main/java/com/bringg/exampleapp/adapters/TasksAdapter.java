@@ -11,7 +11,7 @@ import com.bringg.exampleapp.utils.Utils;
 
 import java.util.List;
 
-import driver_sdk.models.tasks.Task;
+import driver_sdk.models.Task;
 
 public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHolder> {
 
@@ -62,9 +62,9 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         }
 
         public void onBind(Task task) {
-            task.getPickupDropOffType()
-            mTvAddress.setText(task.getExtendedAddress());
-            mTvDateStart.setText(Utils.isoToStringDate(task.getScheduledAt()));
+            driver_sdk.models.tasks.Task taskModel= (driver_sdk.models.tasks.Task) task;
+            mTvAddress.setText(taskModel.getExtendedAddress());
+            mTvDateStart.setText(Utils.isoToStringDate(taskModel.getScheduledAt()));
             mTvTitle.setText(task.getTitle());
         }
     }

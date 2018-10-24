@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.ResultReceiver;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.bringg.exampleapp.BringgProvider;
 
@@ -16,10 +18,12 @@ import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.shift.EndShiftCallback;
 import driver_sdk.shift.GetShiftResultCallback;
 import driver_sdk.shift.Shift;
+import driver_sdk.shift.ShiftEventsListener;
 import driver_sdk.shift.StartShiftResultCallback;
 
-public class ShiftManager {
+public class ShiftManager implements ShiftEventsListener {
 
+    public static final String TAG = ShiftManager.class.getSimpleName();
     private final LeanBringgSDKClient mClient;
     public static final String ACTION_SHIFT_CHANGE = "com.bringg.exampleapp.ACTION_SHIFT_CHANGE";
     public static final String EXTRA_IN_SHIFT = "com.bringg.exampleapp.EXTRA_IN_SHIFT";
@@ -38,6 +42,7 @@ public class ShiftManager {
     public ShiftManager(Context context, BringgProvider bringgProvider) {
         mContext = context;
         mClient = bringgProvider.getClient();
+        bringgProvider.addShiftListener(this);
         mShiftResultCallback = new ShiftResultCallbackImpl();
     }
 
@@ -64,12 +69,9 @@ public class ShiftManager {
 
     }
 
-    private void resumeQueueService() {
-        RequestQueueService.resume(mContext, new ResultReceiver(null));
-    }
-
-    private void pauseQueueService() {
-        mContext.stopService(new Intent(mContext, RequestQueueService.class));
+    @Override
+    public void onShiftEnded(long l, @NonNull String s) {
+        notifyShiftUpdate(getShift());
     }
 
     private class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
@@ -86,24 +88,21 @@ public class ShiftManager {
 
         @Override
         public void onShiftStarted() {
-            resumeQueueService();
             notifyShiftUpdate(getShift());
         }
 
         @Override
         public void onShiftStartFailed(int responseCode) {
-            pauseQueueService();
         }
 
         @Override
         public void onEndShiftSuccess() {
-            pauseQueueService();
+            Log.d(TAG, "onEndShiftSuccess");
             notifyShiftUpdate(getShift());
         }
 
         @Override
         public void onEndShiftFailure(int error) {
-            pauseQueueService();
 
         }
 

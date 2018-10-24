@@ -23,6 +23,7 @@ import java.util.List;
 
 import driver_sdk.models.tasks.Task;
 import driver_sdk.models.tasks.Waypoint;
+import driver_sdk.tasks.TaskEventListener;
 
 public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 

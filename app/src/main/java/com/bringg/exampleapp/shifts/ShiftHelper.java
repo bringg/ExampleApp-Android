@@ -52,7 +52,6 @@ public class ShiftHelper {
             mShiftManager.updateShiftState(true);
             setState(ShiftState.SHIFT_ON);
         }
-
     }
 
 
@@ -106,11 +105,11 @@ public class ShiftHelper {
 
 
     private void startShiftService() {
-        mContext.startService(new Intent(mContext, ShiftService.class));
+        //mContext.startService(new Intent(mContext, ShiftService.class));
     }
 
     public void stopShiftService() {
-        mContext.stopService(new Intent(mContext, ShiftService.class));
+      //  mContext.stopService(new Intent(mContext, ShiftService.class));
 
     }
 

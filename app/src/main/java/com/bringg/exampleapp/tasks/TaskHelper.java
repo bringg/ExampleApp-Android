@@ -14,14 +14,19 @@ import driver_sdk.tasks.TaskActionCallback;
 import static driver_sdk.models.Task.Status.STATUS_CHECKED_IN;
 import static driver_sdk.models.Task.Status.STATUS_DONE;
 import static driver_sdk.models.Task.Status.STATUS_STARTED;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_LINKED_TASK_NOT_COMPLETED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_NOT_CURRENT_WAY_POINT;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_ALREADY_STARTED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_IN_FUTURE;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_FOUND;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_STARTED;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_STARTED_UNKNOWN_ERROR;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_WITH_HIGHER_PRIORITY_FOUND;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TOO_EARLY_TO_START_TASK;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_ALREADY_ARRIVED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_ALREADY_DONE;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_AT_HOME;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_CHECK_IN_FAILED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_NOT_ARRIVED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_WAY_POINT_NOT_FOUND;
 
@@ -158,6 +163,16 @@ public class TaskHelper {
                 return "Way point  ";
             case ERROR_CODE_WAY_POINT_AT_HOME:
                 return "Way point at home";
+            case ERROR_CODE_TOO_EARLY_TO_START_TASK:
+                return "Too early to start task";
+            case ERROR_CODE_TASK_WITH_HIGHER_PRIORITY_FOUND:
+                return "Task with higher priority found";
+            case ERROR_CODE_LINKED_TASK_NOT_COMPLETED:
+                return "Linked task not completed";
+            case ERROR_CODE_TASK_NOT_STARTED_UNKNOWN_ERROR:
+                return "Task not started unknown error";
+            case ERROR_CODE_WAY_POINT_CHECK_IN_FAILED:
+                return "Way point check in failed";
         }
         return "Unknown error ";
     }

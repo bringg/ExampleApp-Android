@@ -8,29 +8,36 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
 
 import com.bringg.exampleapp.utils.Utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
+import driver_sdk.PermissionVerifier;
 import driver_sdk.models.CancellationReason;
 import driver_sdk.models.NoteData;
+import driver_sdk.models.Task;
+import driver_sdk.models.Waypoint;
 import driver_sdk.models.tasks.PendingTasksData;
-import driver_sdk.models.tasks.Task;
-import driver_sdk.models.tasks.Waypoint;
 import driver_sdk.tasks.TaskEventListener;
 
 
-public abstract class BaseActivity extends AppCompatActivity implements TaskEventListener {
+public class BaseActivity extends AppCompatActivity implements TaskEventListener {
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 3;
     private static final int REQUEST_CODE_CAMERA = 4;
+    public static final String TAG = BaseActivity.class.getSimpleName();
 
     protected BringgProvider mBringgProvider;
     private AlertDialog mLoadingDialog;
     private boolean mIsForeground;
+    private PermissionVerifier.OnPermissionsResultListener onPermissionsResultListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +64,16 @@ public abstract class BaseActivity extends AppCompatActivity implements TaskEven
         }
         if (requestCode == REQUEST_CODE_CAMERA) {
             onRequestCameraResult(grantResults[0] == PackageManager.PERMISSION_GRANTED);
+        }
+        if (onPermissionsResultListener != null) {
+            List<String> deniedPermissions = new ArrayList<String>();
+
+            for (int i = 0; i < permissions.length; i++) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    deniedPermissions.add(permissions[i]);
+                }
+            }
+            onPermissionsResultListener.onRequestPermissionsResult(deniedPermissions);
         }
     }
 
@@ -129,87 +146,117 @@ public abstract class BaseActivity extends AppCompatActivity implements TaskEven
         return mBringgProvider;
     }
 
-    protected void toast(String error) {
-        Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+    protected void toast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
 
     @Override
     public void onTaskAdded(@NonNull Task task) {
+        Log.d(TAG, "onTaskAdded");
 
     }
 
     @Override
     public void onTaskUpdated(@NonNull Task task) {
+        Log.d(TAG, "onTaskUpdated");
 
     }
 
     @Override
     public void onTaskRemoved(long l) {
+        Log.d(TAG, "onTaskRemoved");
 
     }
 
     @Override
     public void onTaskCanceled(long l, @NonNull String s, @NonNull CancellationReason cancellationReason) {
+        Log.d(TAG, "onTaskCanceled");
 
     }
 
     @Override
     public void onTasksAdded(@NonNull Collection<Task> collection) {
+        Log.d(TAG, "onTasksAdded");
 
     }
 
     @Override
     public void onTasksUpdated(@NonNull Collection<Task> collection) {
+        Log.d(TAG, "onTasksUpdated");
 
     }
 
     @Override
     public void onTasksRemoved(@NonNull Collection<Long> collection) {
+        Log.d(TAG, "onTasksRemoved");
 
     }
 
     @Override
     public void onTasksLoaded(@NonNull Collection<Task> collection) {
+        Log.d(TAG, "onTasksLoaded");
 
     }
 
     @Override
     public void onTaskStarted(@NonNull Task task, int i) {
+        Log.d(TAG, "onTaskStarted");
 
     }
 
     @Override
     public void onWayPointArrived(@NonNull Waypoint waypoint) {
+        Log.d(TAG, "onWayPointArrived");
 
     }
 
     @Override
     public void onWayPointUpdated(@NonNull Task task, @NonNull Waypoint waypoint) {
+        Log.d(TAG, "onWayPointUpdated");
 
     }
 
     @Override
     public void onNoteAdded(long l, long l1, NoteData noteData) {
+        Log.d(TAG, "onNoteAdded");
 
     }
 
     @Override
     public void onPendingTaskDataUpdated(@NonNull PendingTasksData pendingTasksData) {
+        Log.d(TAG, "onPendingTaskDataUpdated");
 
     }
 
     @Override
     public void onNextTaskAvailable(@NonNull Task task) {
+        Log.d(TAG, "onNextTaskAvailable");
 
     }
 
     @Override
     public void onTaskDone(@NonNull Task task) {
+        Log.d(TAG, "onTaskDone");
 
+    }
+
+    @Override
+    public void onGrabTaskAdded(@NonNull Task task) {
+        Log.d(TAG, "onGrabTaskAdded");
+
+    }
+
+    @Override
+    public void onWaypointCheckedIn(@NonNull Waypoint wayPoint) {
+        Log.d(TAG, "onWaypointCheckedIn");
     }
 
     public boolean isFroeground() {
         return mIsForeground;
+    }
+
+    public void setOnPermissionsResultListener(PermissionVerifier.OnPermissionsResultListener onPermissionsResultListener) {
+        this.onPermissionsResultListener = onPermissionsResultListener;
     }
 }

@@ -3,6 +3,8 @@ package com.bringg.exampleapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +12,8 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
+import android.util.Log;
 
 
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +35,7 @@ import driver_sdk.models.tasks.PendingTasksData;
 import driver_sdk.models.tasks.Task;
 import driver_sdk.models.tasks.Waypoint;
 import driver_sdk.providers.NotificationProvider;
+import driver_sdk.shift.ShiftEventsListener;
 import driver_sdk.storage.db.SecuredStorage;
 import driver_sdk.storage.db.SecuredStorageProvider;
 import driver_sdk.tasks.TaskEventListener;
@@ -42,17 +47,18 @@ public class BringgProvider {
 
     private final Context mContext;
     private LeanBringgSDKClient mLeanBringgSDKClient;
-    private CopyOnWriteArraySet<TaskEventListener> mTasksListeners;
+    private CopyOnWriteArraySet<ShiftEventsListener> mShiftListeners;
+
     private UIController mUIController;
 
 
     public BringgProvider(Context context) {
 
-        mTasksListeners = new CopyOnWriteArraySet<>();
+        mShiftListeners = new CopyOnWriteArraySet<>();
         mContext = context.getApplicationContext();
         mUIController = new UIController();
         mLeanBringgSDKClient = new BringgSDKBuilder(mContext.getApplicationContext(), new NotificationProviderImpl())
-                .taskEventListener(new TaskEventListenerImpl())
+                .setShiftEventsListener(new ShiftEventsListenerImpl()).setPermissionVerifier(new PermissionVerifierImpl()).setRealTimeEventCallback(new RealTimeEventCallbackImpl())
                 .build();
     }
 
@@ -61,101 +67,24 @@ public class BringgProvider {
     }
 
     public void addTaskListener(TaskEventListener listener) {
-        mTasksListeners.add(listener);
+        mLeanBringgSDKClient.taskEvents().registerTaskEventListener(listener);
     }
 
     public void removeTaskListener(TaskEventListener listener) {
-        mTasksListeners.remove(listener);
+        mLeanBringgSDKClient.taskEvents().unRegisterTaskEventListener(listener);
     }
 
-    private void notifyWayPointArrived(Waypoint waypoint) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onWayPointArrived(waypoint);
-        }
+    public void addShiftListener(ShiftEventsListener listener) {
+        mShiftListeners.add(listener);
     }
 
-    private void notifyTaskRemoved(long taskId) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskRemoved(taskId);
-        }
+    public void removeShiftListener(ShiftEventsListener listener) {
+        mShiftListeners.remove(listener);
     }
 
-    private void notifyTaskStarted(Task remoteTask, int i) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskStarted(remoteTask, i);
-        }
-    }
-
-    private void notifyTaskAdded(Task newTask) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskAdded(newTask);
-        }
-    }
-
-    private void notifyTaskDone(Task task) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskDone(task);
-        }
-    }
-
-    private void notifyNextTaskAvailable(Task task) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onNextTaskAvailable(task);
-        }
-    }
-
-    private void notifyPendingTaskDataUpdated(PendingTasksData pendingTasksData) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onPendingTaskDataUpdated(pendingTasksData);
-        }
-    }
-
-    private void notifyNoteAdded(long l, long l1, NoteData noteData) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onNoteAdded(l, l1, noteData);
-        }
-    }
-
-    private void notifyWayPointUpdated(Task task, Waypoint waypoint) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onWayPointUpdated(task, waypoint);
-        }
-    }
-
-    private void notifyTasksLoaded(Collection<Task> collection) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTasksLoaded(collection);
-        }
-    }
-
-    private void notifyTasksRemoved(Collection<Long> collection) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTasksRemoved(collection);
-        }
-    }
-
-    private void notifyTasksUpdated(Collection<Task> collection) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTasksUpdated(collection);
-        }
-    }
-
-    private void notifyTasksAdded(Collection<Task> collection) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTasksAdded(collection);
-        }
-    }
-
-    private void notifyTaskCanceled(long l, String s, CancellationReason cancellationReason) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskCanceled(l, s, cancellationReason);
-        }
-    }
-
-    private void notifyTaskUpdated(Task task) {
-        for (TaskEventListener listener : mTasksListeners) {
-            listener.onTaskUpdated(task);
-        }
+    private void notifyShiftEnded(long shiftId, String deviceId) {
+        for (ShiftEventsListener shiftEventsListener : mShiftListeners)
+            shiftEventsListener.onShiftEnded(shiftId, deviceId);
     }
 
     public UIController getUIController() {
@@ -172,14 +101,17 @@ public class BringgProvider {
             activity.requestPermissions(permissions, i);
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
-        public void requestPermissionWithResult(Context context, int i, OnPermissionsResultListener onPermissionsResultListener, String... strings) {
+
+        public void requestPermissionWithResult(Context context, int i, OnPermissionsResultListener onPermissionsResultListener, String... permissions) {
+            BaseActivity activity = mUIController.getCurrentActivity();
+            if (activity == null)
+                return;
+            activity.setOnPermissionsResultListener(onPermissionsResultListener);
+            activity.requestPermissions(permissions, i);
         }
 
-        @Override
-        public String[] getPendingPermissions(Context context, String... strings) {
-            return new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
-        }
     }
 
     private class NotificationProviderImpl implements NotificationProvider {
@@ -191,96 +123,103 @@ public class BringgProvider {
     }
 
     private Notification generateNotification() {
-        return new Notification.Builder(mContext)
+
+        String channelId = "channel-01";
+        String channelName = "Channel Name";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel mChannel = new NotificationChannel(
+                    channelId, channelName, importance);
+            notificationManager.createNotificationChannel(mChannel);
+        }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(mContext.getResources().getString(R.string.notification_in_shift_title))
-                .setContentText(mContext.getResources().getString(R.string.notification_in_shift_message))
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .build();
+                .setContentText(mContext.getResources().getString(R.string.notification_in_shift_message));
+        Intent activityIntent = new Intent(mContext, MainActivity.class);
 
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(mContext);
+        stackBuilder.addNextIntent(activityIntent);
+
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(
+                0,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        mBuilder.setContentIntent(resultPendingIntent);
+
+        return mBuilder.build();
 
     }
 
-    private class TaskEventListenerImpl implements TaskEventListener {
+    private class ShiftEventsListenerImpl implements ShiftEventsListener {
         @Override
-        public void onTaskAdded(@NonNull Task task) {
-            notifyTaskAdded(task);
-        }
-
-        @Override
-        public void onTaskUpdated(@NonNull Task task) {
-            notifyTaskUpdated(task);
-        }
-
-        @Override
-        public void onTaskRemoved(long l) {
-            notifyTaskRemoved(l);
-        }
-
-        @Override
-        public void onTaskCanceled(long l, @NonNull String s, @NonNull CancellationReason cancellationReason) {
-            notifyTaskCanceled(l, s, cancellationReason);
-        }
-
-        @Override
-        public void onTasksAdded(@NonNull Collection<Task> collection) {
-            notifyTasksAdded(collection);
-        }
-
-        @Override
-        public void onTasksUpdated(@NonNull Collection<Task> collection) {
-            notifyTasksUpdated(collection);
-
-        }
-
-        @Override
-        public void onTasksRemoved(@NonNull Collection<Long> collection) {
-            notifyTasksRemoved(collection);
-
-        }
-
-        @Override
-        public void onTasksLoaded(@NonNull Collection<Task> collection) {
-            notifyTasksLoaded(collection);
-
-        }
-
-        @Override
-        public void onTaskStarted(@NonNull Task task, int i) {
-            notifyTaskStarted(task, i);
-        }
-
-        @Override
-        public void onWayPointArrived(@NonNull Waypoint waypoint) {
-            notifyWayPointArrived(waypoint);
-        }
-
-        @Override
-        public void onWayPointUpdated(@NonNull Task task, @NonNull Waypoint waypoint) {
-            notifyWayPointUpdated(task, waypoint);
-        }
-
-        @Override
-        public void onNoteAdded(long l, long l1, NoteData noteData) {
-            notifyNoteAdded(l, l1, noteData);
-
-        }
-
-        @Override
-        public void onPendingTaskDataUpdated(@NonNull PendingTasksData pendingTasksData) {
-            notifyPendingTaskDataUpdated(pendingTasksData);
-
-        }
-
-        @Override
-        public void onNextTaskAvailable(@NonNull Task task) {
-            notifyNextTaskAvailable(task);
-        }
-
-        @Override
-        public void onTaskDone(@NonNull Task task) {
-            notifyTaskDone(task);
+        public void onShiftEnded(long shiftId, @NonNull String deviceId) {
+            notifyShiftEnded(shiftId, deviceId);
         }
     }
 
+    private class RealTimeEventCallbackImpl implements RealTimeEventCallback {
+        public  final String TAG = RealTimeEventCallbackImpl.class.getSimpleName();
 
+        @Override
+        public void onTasksReadyToExecute() {
+            Log.d(TAG, "onTasksReadyToExecute");
+
+        }
+
+        @Override
+        public void onMassRemoveTasks(long[] taskIds, CancellationReason cancellationReason) {
+            Log.d(TAG, "onMassRemoveTasks");
+
+        }
+
+        @Override
+        public void onWayPointUpdated(@NonNull WayPointUpdatedDataFromEvent wayPointUpdatedDataFromEvent) {
+            Log.d(TAG, "onWayPointUpdated");
+
+        }
+
+        @Override
+        public void onShareLogsRequest() {
+            Log.d(TAG, "onShareLogsRequest");
+
+        }
+
+        @Override
+        public void onRefreshTaskRequest(long taskId) {
+            Log.d(TAG, "onRefreshTaskRequest");
+
+        }
+
+        @Override
+        public void onWayPointAdded(@NonNull JSONObject args) {
+            Log.d(TAG, "onWayPointAdded");
+
+        }
+
+        @Override
+        public void onWayPointViewed(long taskId, long wayPointId) {
+            Log.d(TAG, "onWayPointViewed");
+
+        }
+
+        @Override
+        public void onRouteOptimizationResult(JSONObject routeOptimizationResult) {
+            Log.d(TAG, "onRouteOptimizationResult");
+
+        }
+
+        @Override
+        public void onTestEvent() {
+            Log.d(TAG, "onTestEvent");
+
+        }
+
+        @Override
+        public void onShiftEnded() {
+            Log.d(TAG, "onShiftEnded");
+        }
+    }
 }

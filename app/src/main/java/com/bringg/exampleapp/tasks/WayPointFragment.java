@@ -25,8 +25,8 @@ import com.bringg.exampleapp.utils.CircleTransform;
 import com.bringg.exampleapp.utils.Utils;
 import com.squareup.picasso.Picasso;
 
-import driver_sdk.models.tasks.Task;
-import driver_sdk.models.tasks.Waypoint;
+import driver_sdk.models.Task;
+import driver_sdk.models.Waypoint;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 

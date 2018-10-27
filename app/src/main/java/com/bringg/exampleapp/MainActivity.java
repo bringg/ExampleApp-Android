@@ -118,6 +118,7 @@ public class MainActivity extends DebugActivity {
         showLoadingProgress();
         mTvListEmpty.setVisibility(View.GONE);
         mTasks.clear();
+        mTasksAdapter.notifyDataSetChanged();
         mBringgProvider.getClient().taskActions().refreshTasks(mTasksResultCallback);
 
     }
@@ -182,6 +183,8 @@ public class MainActivity extends DebugActivity {
     public void onTaskAdded(@NonNull Task task) {
         super.onTaskAdded(task);
         mTasks.add(task);
+        if (mTvListEmpty.getVisibility() == View.VISIBLE)
+            mTvListEmpty.setVisibility(View.GONE);
         mTasksAdapter.notifyDataSetChanged();
     }
 
@@ -274,7 +277,7 @@ public class MainActivity extends DebugActivity {
                     onUserLogin();
                 break;
             case REQUEST_CODE_TASK_ACTIVITY:
-                refreshItems();
+              //  refreshItems();
                 break;
         }
     }
@@ -284,7 +287,6 @@ public class MainActivity extends DebugActivity {
 
         @Override
         public void onItemSelected(Task task) {
-
             startActivityForResult(TaskActivity.getIntent(MainActivity.this, task.getId()), REQUEST_CODE_TASK_ACTIVITY);
         }
     }
@@ -292,7 +294,7 @@ public class MainActivity extends DebugActivity {
     private class TasksResultCallbackImpl implements GetTasksResultCallback, RefreshTasksResultCallback {
 
         public void onTaskResult(List<Task> tasks) {
-            if (isFinishing())
+            if (isDestroyed())
                 return;
             hideLoadingProgress();
             if (tasks.isEmpty()) {
@@ -304,6 +306,7 @@ public class MainActivity extends DebugActivity {
             }
             mSwipeRefreshLayout.setRefreshing(false);
             mTasks.clear();
+            mTasksAdapter.notifyDataSetChanged();
             mTasks.addAll(tasks);
             mTasksAdapter.notifyDataSetChanged();
         }

@@ -45,11 +45,13 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         private final TextView mTvAddress;
         private final TextView mTvDateStart;
         private final TextView mTvTitle;
+        private final View mTvNotAccepted;
 
         public TaskViewHolder(View itemView) {
             super(itemView);
             mTvAddress = itemView.findViewById(R.id.tv_task_address);
             mTvTitle = itemView.findViewById(R.id.tv_task_title);
+            mTvNotAccepted = itemView.findViewById(R.id.tv_task_accepted);
 
             mTvDateStart = itemView.findViewById(R.id.tv_task_date_start);
             itemView.setOnClickListener(new View.OnClickListener() {
@@ -62,10 +64,14 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         }
 
         public void onBind(Task task) {
-            driver_sdk.models.tasks.Task taskModel= (driver_sdk.models.tasks.Task) task;
+            driver_sdk.models.tasks.Task taskModel = (driver_sdk.models.tasks.Task) task;
             mTvAddress.setText(taskModel.getExtendedAddress());
             mTvDateStart.setText(Utils.isoToStringDate(taskModel.getScheduledAt()));
             mTvTitle.setText(task.getTitle());
+            if (task.isAccepted())
+                mTvNotAccepted.setVisibility(View.GONE);
+            else
+                mTvNotAccepted.setVisibility(View.VISIBLE);
         }
     }
 

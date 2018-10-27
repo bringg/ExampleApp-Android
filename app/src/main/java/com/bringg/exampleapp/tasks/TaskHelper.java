@@ -6,8 +6,8 @@ import android.util.Log;
 import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.BringgProvider;
 
-import driver_sdk.models.tasks.Task;
-import driver_sdk.models.tasks.Waypoint;
+import driver_sdk.models.Task;
+import driver_sdk.models.Waypoint;
 import driver_sdk.tasks.LeaveWayPointActionCallback;
 import driver_sdk.tasks.TaskActionCallback;
 
@@ -90,10 +90,17 @@ public class TaskHelper {
         return WayPointState.ARRIVE;
     }
 
+    public void acceptTask() {
+        if (mTask.isAccepted())
+            return;
+        ((driver_sdk.models.tasks.Task) mTask).accept();
+        mBringgProvider.getClient().taskActions().acceptTask(mTask.getId(), new TaskActionCallbackImpl(TaskActionCallbackImpl.TYPE_ACCEPT_TASK));
+    }
+
     public void startTask() {
         if (mTask.isStarted())
             return;
-        mBringgProvider.getClient().taskActions().startTask(mTask.getId(), new TaskActionCallbackImpl());
+        mBringgProvider.getClient().taskActions().startTask(mTask.getId(), new TaskActionCallbackImpl(TaskActionCallbackImpl.TYPE_START_TASK));
     }
 
     private void startWayPoint(long wayPointId) {
@@ -214,11 +221,27 @@ public class TaskHelper {
     }
 
     private class TaskActionCallbackImpl implements TaskActionCallback {
+        final static int TYPE_START_TASK = 0;
+        final static int TYPE_ACCEPT_TASK = 1;
+        int mType;
+
+        TaskActionCallbackImpl(int type) {
+            mType = type;
+        }
+
         @Override
         public void onActionDone() {
-            mTask.start();
-            setTaskState(TaskState.STARTED);
-            startWayPoint(mTask.getFirstWayPoint().getId());
+            switch (mType) {
+                case TYPE_START_TASK:
+                    setTaskState(TaskState.STARTED);
+                    startWayPoint(((driver_sdk.models.tasks.Task) mTask).getFirstWayPoint().getId());
+                    break;
+                case TYPE_ACCEPT_TASK:
+                    setTaskState(TaskState.ACCEPTED);
+                    startTask();
+                    break;
+            }
+
         }
 
         @Override

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -154,7 +155,6 @@ public class BaseActivity extends AppCompatActivity implements TaskEventListener
     @Override
     public void onTaskAdded(@NonNull Task task) {
         Log.d(TAG, "onTaskAdded");
-
     }
 
     @Override
@@ -250,6 +250,26 @@ public class BaseActivity extends AppCompatActivity implements TaskEventListener
     @Override
     public void onWaypointCheckedIn(@NonNull Waypoint wayPoint) {
         Log.d(TAG, "onWaypointCheckedIn");
+    }
+
+    @Override
+    public void onFutureTaskListUpdated(@NonNull List<Task> futureTasks) {
+
+    }
+
+    @Override
+    public void onMassTasksRemove(@NonNull List<Task> removedTasks, @Nullable CancellationReason cancellationReason) {
+
+    }
+
+    @Override
+    public void onWayPointAdded(@NonNull Task task, @NonNull Waypoint waypoint) {
+
+    }
+
+    @Override
+    public void onWaypointViewed(long taskId, long wayPointId) {
+
     }
 
     public boolean isFroeground() {

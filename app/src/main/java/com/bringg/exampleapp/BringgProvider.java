@@ -58,7 +58,7 @@ public class BringgProvider {
         mContext = context.getApplicationContext();
         mUIController = new UIController();
         mLeanBringgSDKClient = new BringgSDKBuilder(mContext.getApplicationContext(), new NotificationProviderImpl())
-                .setShiftEventsListener(new ShiftEventsListenerImpl()).setPermissionVerifier(new PermissionVerifierImpl()).setRealTimeEventCallback(new RealTimeEventCallbackImpl())
+                .setShiftEventsListener(new ShiftEventsListenerImpl()).setPermissionVerifier(new PermissionVerifierImpl())
                 .build();
     }
 
@@ -157,69 +157,6 @@ public class BringgProvider {
         @Override
         public void onShiftEnded(long shiftId, @NonNull String deviceId) {
             notifyShiftEnded(shiftId, deviceId);
-        }
-    }
-
-    private class RealTimeEventCallbackImpl implements RealTimeEventCallback {
-        public  final String TAG = RealTimeEventCallbackImpl.class.getSimpleName();
-
-        @Override
-        public void onTasksReadyToExecute() {
-            Log.d(TAG, "onTasksReadyToExecute");
-
-        }
-
-        @Override
-        public void onMassRemoveTasks(long[] taskIds, CancellationReason cancellationReason) {
-            Log.d(TAG, "onMassRemoveTasks");
-
-        }
-
-        @Override
-        public void onWayPointUpdated(@NonNull WayPointUpdatedDataFromEvent wayPointUpdatedDataFromEvent) {
-            Log.d(TAG, "onWayPointUpdated");
-
-        }
-
-        @Override
-        public void onShareLogsRequest() {
-            Log.d(TAG, "onShareLogsRequest");
-
-        }
-
-        @Override
-        public void onRefreshTaskRequest(long taskId) {
-            Log.d(TAG, "onRefreshTaskRequest");
-
-        }
-
-        @Override
-        public void onWayPointAdded(@NonNull JSONObject args) {
-            Log.d(TAG, "onWayPointAdded");
-
-        }
-
-        @Override
-        public void onWayPointViewed(long taskId, long wayPointId) {
-            Log.d(TAG, "onWayPointViewed");
-
-        }
-
-        @Override
-        public void onRouteOptimizationResult(JSONObject routeOptimizationResult) {
-            Log.d(TAG, "onRouteOptimizationResult");
-
-        }
-
-        @Override
-        public void onTestEvent() {
-            Log.d(TAG, "onTestEvent");
-
-        }
-
-        @Override
-        public void onShiftEnded() {
-            Log.d(TAG, "onShiftEnded");
         }
     }
 }

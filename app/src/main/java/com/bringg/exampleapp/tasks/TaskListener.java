@@ -1,7 +1,7 @@
 package com.bringg.exampleapp.tasks;
 
-import driver_sdk.models.tasks.Task;
-import driver_sdk.models.tasks.Waypoint;
+import driver_sdk.models.Task;
+import driver_sdk.models.Waypoint;
 
 interface TaskListener {
 

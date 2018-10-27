@@ -38,5 +38,8 @@
     <string name="qr_code">QR Code</string>
     <string name="notification_in_shift_title">Shift ON</string>
     <string name="notification_in_shift_message">You are in shift</string>
+    <string name="task_not_accept_title">Task not accepted</string>
+    <string name="task_not_accept_message">Please accept task for start task</string>
+    <string name="no_now">Not now</string>
 
 </resources>

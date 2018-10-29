@@ -1,5 +1,6 @@
 package com.bringg.exampleapp.views;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -10,6 +11,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.shifts.ShiftHelper;
 
@@ -43,20 +45,21 @@ public class ShiftControlView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mShiftHelper.register();
+        mShiftHelper.register(mShiftStateHelperListener);
+        updateView();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mShiftHelper.unregister();
+        mShiftHelper.unregister(mShiftStateHelperListener);
 
     }
 
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_shift_control, this, true);
 
-        mShiftHelper = new ShiftHelper(getContext(), mShiftStateHelperListener);
+        mShiftHelper = ((BringgApp) ((Activity) getContext()).getApplication()).getShiftHelper();
         mTvShiftState = (TextView) findViewById(R.id.tv_shift_state);
         mBtnToggleShift = (Button) findViewById(R.id.btn_toggle_shift);
         mBtnToggleShift.setOnClickListener(new OnClickListener() {
@@ -72,12 +75,19 @@ public class ShiftControlView extends FrameLayout {
     private void updateView() {
         switch (mShiftHelper.getState()) {
             case SHIFT_OFF:
+                mBtnToggleShift.setEnabled(true);
                 mBtnToggleShift.setText(R.string.start_shift);
                 mTvShiftState.setText(R.string.not_in_shift);
                 break;
             case SHIFT_ON:
+                mBtnToggleShift.setEnabled(true);
                 mBtnToggleShift.setText(R.string.end_shift);
                 mTvShiftState.setText(R.string.in_shift);
+                break;
+            case UNKNOWN:
+                mBtnToggleShift.setEnabled(false);
+                mBtnToggleShift.setText(R.string.loading);
+                mTvShiftState.setText(R.string.loading);
                 break;
         }
     }

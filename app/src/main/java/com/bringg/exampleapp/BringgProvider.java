@@ -94,24 +94,22 @@ public class BringgProvider {
     private class PermissionVerifierImpl implements PermissionVerifier {
         @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
-        public void requestPermission(Context context, int i, String... permissions) {
-            Activity activity = mUIController.getCurrentActivity();
+        public void onMissingPermission(@NonNull Context context, @NonNull String... permissions) {
+            BaseActivity activity = mUIController.getCurrentActivity();
             if (activity == null)
                 return;
-            activity.requestPermissions(permissions, i);
+            activity.requestPermissions(permissions, 0);
         }
 
         @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
-
-        public void requestPermissionWithResult(Context context, int i, OnPermissionsResultListener onPermissionsResultListener, String... permissions) {
+        public void requestPermissionWithResult(@NonNull Context context, @NonNull String[] permissions, @NonNull OnPermissionsResultListener resultListener) {
             BaseActivity activity = mUIController.getCurrentActivity();
             if (activity == null)
                 return;
-            activity.setOnPermissionsResultListener(onPermissionsResultListener);
-            activity.requestPermissions(permissions, i);
+            activity.setOnPermissionsResultListener(resultListener);
+            activity.requestPermissions(permissions, 0);
         }
-
     }
 
     private class NotificationProviderImpl implements NotificationProvider {

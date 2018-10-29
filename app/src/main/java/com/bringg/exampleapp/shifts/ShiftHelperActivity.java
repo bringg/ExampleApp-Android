@@ -4,33 +4,32 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import com.bringg.exampleapp.BaseActivity;
+import com.bringg.exampleapp.BringgApp;
 
 import driver_sdk.connection.services.RequestQueueService;
 
 import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
 
 abstract public class ShiftHelperActivity extends BaseActivity {
-    private static ShiftHelper mShiftHelper;
+    private ShiftHelper mShiftHelper;
     private ShiftHelper.ShiftStateHelperListener mShiftStateHelperListener = new ShiftStateHelperListenerImpl();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (mShiftHelper == null)
-            mShiftHelper = new ShiftHelper(this, mShiftStateHelperListener);
-
+        mShiftHelper = ((BringgApp) getApplication()).getShiftHelper();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mShiftHelper.register();
+        mShiftHelper.register(mShiftStateHelperListener);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mShiftHelper.unregister();
+        mShiftHelper.unregister(mShiftStateHelperListener);
     }
 
     protected void toggleShift() {
@@ -40,18 +39,20 @@ abstract public class ShiftHelperActivity extends BaseActivity {
     protected abstract void notifyShiftStateChanged(ShiftHelper.ShiftState state);
 
     protected boolean isLoggedIn() {
-        return  mBringgProvider.getClient().loginState().isLoggedIn();
+        return mBringgProvider.getClient().loginState().isLoggedIn();
     }
 
     protected ShiftHelper.ShiftState getShiftState() {
         return mShiftHelper.getState();
     }
 
+    protected void getShiftStateFromRemote() {
+        mShiftHelper.getShiftStatusFromRemote();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mShiftHelper.getState() != ShiftHelper.ShiftState.SHIFT_ON)
-            stopService(new Intent(this, RequestQueueService.class));
     }
 
     private class ShiftStateHelperListenerImpl implements ShiftHelper.ShiftStateHelperListener {

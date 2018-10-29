@@ -44,7 +44,7 @@ import driver_sdk.tasks.RefreshTasksResultCallback;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class MainActivity extends DebugActivity {
+public class MainActivity extends ShiftHelperActivity {
 
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
     private static final int REQUEST_CODE_TASK_ACTIVITY = 2;
@@ -118,14 +118,14 @@ public class MainActivity extends DebugActivity {
         showLoadingProgress();
         mTvListEmpty.setVisibility(View.GONE);
         mTasks.clear();
-        mTasksAdapter.notifyDataSetChanged();
+        //mTasksAdapter.notifyDataSetChanged();
         mBringgProvider.getClient().taskActions().refreshTasks(mTasksResultCallback);
 
     }
 
     private void onUserLogin() {
         getUser();
-
+        getShiftStateFromRemote();
         refreshItems();
     }
 
@@ -145,7 +145,6 @@ public class MainActivity extends DebugActivity {
     @Override
     public void onTasksLoaded(@NonNull Collection<driver_sdk.models.Task> tasks) {
         super.onTasksLoaded(tasks);
-        super.onTasksUpdated(tasks);
         mTasksResultCallback.onTaskResult(new ArrayList<>(tasks));
     }
 
@@ -159,7 +158,7 @@ public class MainActivity extends DebugActivity {
     public void onTaskRemoved(long taskId) {
         super.onTaskRemoved(taskId);
         mTasks.remove(getLocalTaskById(taskId));
-        mTasksAdapter.notifyDataSetChanged();
+        notifyDataSetChanged();
         if (mTasks.isEmpty())
             mTvListEmpty.setVisibility(View.VISIBLE);
     }
@@ -181,10 +180,14 @@ public class MainActivity extends DebugActivity {
 
     @Override
     public void onTaskAdded(@NonNull Task task) {
-        super.onTaskAdded(task);
-        mTasks.add(task);
         if (mTvListEmpty.getVisibility() == View.VISIBLE)
             mTvListEmpty.setVisibility(View.GONE);
+        super.onTaskAdded(task);
+        mTasks.add(task);
+        mTasksAdapter.notifyItemRangeInserted(mTasks.size() - 1, 1);
+    }
+
+    private void notifyDataSetChanged() {
         mTasksAdapter.notifyDataSetChanged();
     }
 
@@ -277,7 +280,7 @@ public class MainActivity extends DebugActivity {
                     onUserLogin();
                 break;
             case REQUEST_CODE_TASK_ACTIVITY:
-              //  refreshItems();
+                notifyDataSetChanged();
                 break;
         }
     }

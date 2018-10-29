@@ -13,6 +13,8 @@ import com.bringg.exampleapp.BringgProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
+
 import driver_sdk.LeanBringgSDKClient;
 import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.shift.EndShiftCallback;
@@ -25,32 +27,27 @@ public class ShiftManager implements ShiftEventsListener {
 
     public static final String TAG = ShiftManager.class.getSimpleName();
     private final LeanBringgSDKClient mClient;
-    public static final String ACTION_SHIFT_CHANGE = "com.bringg.exampleapp.ACTION_SHIFT_CHANGE";
-    public static final String EXTRA_IN_SHIFT = "com.bringg.exampleapp.EXTRA_IN_SHIFT";
-    public static final String EXTRA_SHIFT_ERROR = "com.bringg.exampleapp.EXTRA_SHIFT_ERROR";
-    public static final String EXTRA_SHIFT_ERROR_MESSAGE = "com.bringg.exampleapp.EXTRA_SHIFT_ERROR_MESSAGE";
 
 
     private ShiftResultCallbackImpl mShiftResultCallback;
-    private Context mContext;
+    private OnShiftUpdateListener mListener;
 
 
-    public static IntentFilter getIntentFilterShiftChanged() {
-        return new IntentFilter(ACTION_SHIFT_CHANGE);
-    }
-
-    public ShiftManager(Context context, BringgProvider bringgProvider) {
-        mContext = context;
+    public ShiftManager(BringgProvider bringgProvider) {
         mClient = bringgProvider.getClient();
         bringgProvider.addShiftListener(this);
         mShiftResultCallback = new ShiftResultCallbackImpl();
+    }
+
+    public void setOnShiftUpdateListener(@NonNull OnShiftUpdateListener listener) {
+        mListener = listener;
     }
 
     public Shift getShift() {
         return mClient.shiftActions().getShift();
     }
 
-    public void load() {
+    public void getShiftStatusFromRemote() {
         mClient.shiftActions().getShiftStatusFromRemote(mShiftResultCallback);
     }
 
@@ -61,38 +58,38 @@ public class ShiftManager implements ShiftEventsListener {
             mClient.shiftActions().endShift(mShiftResultCallback);
     }
 
-    private void notifyShiftUpdate(Shift shift) {
-        Intent intent = new Intent();
-        intent.setAction(ACTION_SHIFT_CHANGE);
-        intent.putExtra(EXTRA_IN_SHIFT, shift.on);
-        LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-
-    }
-
     @Override
     public void onShiftEnded(long l, @NonNull String s) {
         notifyShiftUpdate(getShift());
+    }
+
+    private void notifyShiftUpdate(@NonNull Shift shift) {
+        if (mListener != null)
+            mListener.onShiftUpdate(shift);
     }
 
     private class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
 
         @Override
         public void onGetShiftStatusResult(@NotNull Shift shift) {
+            Log.d(TAG, "onGetShiftStatusResult");
             notifyShiftUpdate(shift);
         }
 
         @Override
         public void onGetShiftStatusFailed(@Nullable Shift lastKnownShift) {
-
+            Log.d(TAG, "onGetShiftStatusFailed");
         }
 
         @Override
         public void onShiftStarted() {
+            Log.d(TAG, "onShiftStarted");
             notifyShiftUpdate(getShift());
         }
 
         @Override
         public void onShiftStartFailed(int responseCode) {
+            Log.d(TAG, "onShiftStartFailed responseCode:" + responseCode);
         }
 
         @Override
@@ -103,13 +100,17 @@ public class ShiftManager implements ShiftEventsListener {
 
         @Override
         public void onEndShiftFailure(int error) {
+            Log.d(TAG, "onEndShiftFailure error:" + error);
 
         }
 
         @Override
         public void onEndShiftRetryLater() {
-
+            Log.d(TAG, "onEndShiftRetryLater");
         }
     }
 
+    public interface OnShiftUpdateListener {
+        void onShiftUpdate(@NonNull Shift shift);
+    }
 }

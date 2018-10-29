@@ -83,6 +83,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 
     private void updateView(TaskHelper.TaskState taskState) {
         switch (taskState) {
+            case ACCEPTED:
             case NOT_STARTED:
                 mBtnStartTask.setVisibility(View.VISIBLE);
                 break;

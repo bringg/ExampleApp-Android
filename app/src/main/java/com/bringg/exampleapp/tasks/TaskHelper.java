@@ -17,7 +17,9 @@ import static driver_sdk.models.Task.Status.STATUS_STARTED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_LINKED_TASK_NOT_COMPLETED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_NOT_CURRENT_WAY_POINT;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_ALREADY_STARTED;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_CAN_NOT_BE_ACCEPTED_LOCALLY;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_IN_FUTURE;
+import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_ASSIGNED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_FOUND;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_STARTED;
 import static driver_sdk.tasks.TaskActionCallback.ERROR_CODE_TASK_NOT_STARTED_UNKNOWN_ERROR;
@@ -93,7 +95,6 @@ public class TaskHelper {
     public void acceptTask() {
         if (mTask.isAccepted())
             return;
-        ((driver_sdk.models.tasks.Task) mTask).accept();
         mBringgProvider.getClient().taskActions().acceptTask(mTask.getId(), new TaskActionCallbackImpl(TaskActionCallbackImpl.TYPE_ACCEPT_TASK));
     }
 
@@ -180,6 +181,10 @@ public class TaskHelper {
                 return "Task not started unknown error";
             case ERROR_CODE_WAY_POINT_CHECK_IN_FAILED:
                 return "Way point check in failed";
+            case ERROR_CODE_TASK_NOT_ASSIGNED:
+                return "task not assigned";
+            case ERROR_CODE_TASK_CAN_NOT_BE_ACCEPTED_LOCALLY:
+                return "task can not be accepted locally";
         }
         return "Unknown error ";
     }
@@ -238,7 +243,7 @@ public class TaskHelper {
                     break;
                 case TYPE_ACCEPT_TASK:
                     setTaskState(TaskState.ACCEPTED);
-                    startTask();
+                    //startTask();
                     break;
             }
 

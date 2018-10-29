@@ -31,19 +31,16 @@ public class LoginWithPhoneView extends LinearLayout {
     public LoginWithPhoneView(@NonNull Context context) {
         super(context);
         init();
-
     }
 
     public LoginWithPhoneView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
-
     }
 
     public LoginWithPhoneView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -83,8 +80,6 @@ public class LoginWithPhoneView extends LinearLayout {
             if (isSmsValid() && mListener != null)
                 mListener.onSmsPasswordInsert(mEtPhone.getText().toString(), mEtSms.getText().toString());
         }
-
-
     }
 
     private void setState(State state) {
@@ -141,5 +136,4 @@ public class LoginWithPhoneView extends LinearLayout {
 
         void onSmsPasswordInsert(String phone, String sms);
     }
-
 }

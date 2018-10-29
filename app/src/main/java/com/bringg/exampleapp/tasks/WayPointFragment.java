@@ -8,7 +8,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -25,7 +24,6 @@ import com.bringg.exampleapp.utils.CircleTransform;
 import com.bringg.exampleapp.utils.Utils;
 import com.squareup.picasso.Picasso;
 
-import driver_sdk.models.Task;
 import driver_sdk.models.Waypoint;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
@@ -119,8 +117,8 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
             if (TextUtils.isEmpty(imgUrl))
                 return;
             if (!imgUrl.contains("http"))
-                imgUrl = new StringBuilder(BASE_HOST).append(imgUrl).toString();
-            Picasso.with(getContext()).load(imgUrl).transform(new CircleTransform()).into(mImgProfile);
+                imgUrl = BASE_HOST + imgUrl;
+            Picasso.get().load(imgUrl).transform(new CircleTransform()).into(mImgProfile);
         }
         updateViews();
     }

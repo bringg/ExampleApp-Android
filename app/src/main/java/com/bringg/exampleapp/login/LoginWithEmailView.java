@@ -5,6 +5,8 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.support.annotation.StringRes;
+import android.support.design.widget.Snackbar;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -24,26 +26,22 @@ public class LoginWithEmailView extends LinearLayout {
     public LoginWithEmailView(@NonNull Context context) {
         super(context);
         init();
-
     }
 
     public LoginWithEmailView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
-
     }
 
     public LoginWithEmailView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public LoginWithEmailView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
-
     }
 
     public void setListener(ViewEmailLoginListener listener) {
@@ -71,7 +69,7 @@ public class LoginWithEmailView extends LinearLayout {
 
     private boolean isEmailValid() {
         if (TextUtils.isEmpty(mEtEmail.getText())) {
-            toast(R.string.mail_empty_message);
+            showNotification(R.string.mail_empty_message);
             return false;
         }
         return true;
@@ -79,7 +77,7 @@ public class LoginWithEmailView extends LinearLayout {
 
     private boolean isPasswordValid() {
         if (TextUtils.isEmpty(mEtPassword.getText())) {
-            toast(R.string.password_empty_message);
+            showNotification(R.string.password_empty_message);
             return false;
         }
         return true;
@@ -89,8 +87,7 @@ public class LoginWithEmailView extends LinearLayout {
         void loginWithMail(String mail, String password);
     }
 
-
-    void toast(int stringId) {
-        Toast.makeText(getContext(), stringId, Toast.LENGTH_SHORT).show();
+    void showNotification(@StringRes int stringId) {
+        Snackbar.make(this, stringId, Toast.LENGTH_SHORT).show();
     }
 }

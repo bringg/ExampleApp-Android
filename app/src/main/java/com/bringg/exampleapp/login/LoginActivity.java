@@ -1,30 +1,32 @@
 package com.bringg.exampleapp.login;
 
-import android.content.ActivityNotFoundException;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.Checkable;
 import android.widget.RadioGroup;
+import android.widget.ViewAnimator;
 
 import com.bringg.exampleapp.BaseActivity;
-import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.utils.ScannerActivity;
 import com.bringg.exampleapp.views.dialogs.ListItemDialog;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.Locale;
 import java.util.Map;
 
+import driver_sdk.BringgSDKClient;
 import driver_sdk.account.LoginCallback;
 import driver_sdk.account.RequestConfirmationCallback;
-import driver_sdk.models.User;
 
 public class LoginActivity extends BaseActivity {
 
@@ -38,7 +40,7 @@ public class LoginActivity extends BaseActivity {
     private String mPhone;
     private String mPassword;
     private String mEmail;
-
+    private ViewAnimator mVsLoginViewContainer;
 
     enum TypeLogin {
         EMAIL,
@@ -56,27 +58,33 @@ public class LoginActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        findViews();
-        initViews();
+
         mApiRequestCallback = new ApiRequestCallbackImpl();
 
+        mVsLoginViewContainer = findViewById(R.id.v_login_view_switcher);
+        mVsLoginViewContainer.setVisibility(View.INVISIBLE);
 
+        mRgLoginType = findViewById(R.id.rg_login_type);
+        mViewMailLogin = findViewById(R.id.v_login_with_mail);
+        mViewPhoneLogin = findViewById(R.id.v_login_with_phone);
+
+        ViewLoginListenerImpl loginListener = new ViewLoginListenerImpl();
+        mViewPhoneLogin.setListener(loginListener);
+        mViewMailLogin.setListener(loginListener);
+        initRadioGroup();
+    }
+
+    private void checkEmailLoginRadioBtn() {
+        ((Checkable) findViewById(R.id.rb_email)).setChecked(true);
     }
 
     @Override
     protected void onRequestCameraResult(boolean allow) {
         if (allow)
-            startQrCodeActivity();
+            startScanActivityWithPermissionCheck();
     }
 
-    private void findViews() {
-        mRgLoginType = (RadioGroup) findViewById(R.id.rg_login_type);
-        mViewMailLogin = (LoginWithEmailView) findViewById(R.id.v_login_with_mail);
-        mViewPhoneLogin = (LoginWithPhoneView) findViewById(R.id.v_login_with_phone);
-    }
-
-    private void initViews() {
-        mTypeLogin = TypeLogin.EMAIL;
+    private void initRadioGroup() {
         mRgLoginType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -95,9 +103,6 @@ public class LoginActivity extends BaseActivity {
                 setTypeLogin(typeLogin);
             }
         });
-        ViewLoginListenerImpl loginListener = new ViewLoginListenerImpl();
-        mViewPhoneLogin.setListener(loginListener);
-        mViewMailLogin.setListener(loginListener);
     }
 
     private void setTypeLogin(TypeLogin typeLogin) {
@@ -106,24 +111,44 @@ public class LoginActivity extends BaseActivity {
         mTypeLogin = typeLogin;
         switch (mTypeLogin) {
             case EMAIL:
-                mViewPhoneLogin.setVisibility(View.GONE);
-                mViewMailLogin.setVisibility(View.VISIBLE);
+                mVsLoginViewContainer.setVisibility(View.VISIBLE);
+                mVsLoginViewContainer.setDisplayedChild(1);
                 break;
             case PHONE:
-                mViewPhoneLogin.setVisibility(View.VISIBLE);
-                mViewMailLogin.setVisibility(View.GONE);
+                mVsLoginViewContainer.setVisibility(View.VISIBLE);
+                mVsLoginViewContainer.setDisplayedChild(0);
                 break;
             case QR_CODE:
-                if (!askCameraPermission())
-                    startQrCodeActivity();
+                mVsLoginViewContainer.setVisibility(View.INVISIBLE);
+                startScanActivityWithPermissionCheck();
                 break;
         }
     }
 
-    private void startQrCodeActivity() {
+    private void startScanActivityWithPermissionCheck() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, BaseActivity.REQUEST_CODE_CAMERA);
+        } else {
+            startScanActivity();
+        }
+    }
 
+    private void startScanActivity() {
         Intent intent = new Intent(this, ScannerActivity.class);
         startActivityForResult(intent, REQ_CODE_QR_SCANNER);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == BaseActivity.REQUEST_CODE_CAMERA) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                startScanActivity();
+            } else {
+                Snackbar.make(mRgLoginType, "Can't use QR login without approving the camera permission", Snackbar.LENGTH_LONG).show();
+                checkEmailLoginRadioBtn();
+            }
+        }
     }
 
     @Override
@@ -134,34 +159,23 @@ public class LoginActivity extends BaseActivity {
                 String scanTex = data.getStringExtra(ScannerActivity.EXTRA_SCAN_RESULT);
                 loginWithQR(scanTex);
             } else Log.e(TAG, "onActivityResult data = null");
-
         }
     }
 
-    private void loginWithPhone(String merchantId) {
+    private void loginWithPhone(@Nullable String merchantId) {
         showLoadingProgress();
-        mBringgProvider.getClient().loginActions().loginWithCredentials(null, mPhone, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+        BringgSDKClient.getInstance().loginActions().loginWithCredentials(null, mPhone, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
 
     }
 
     private void loginWithMail(String merchantId) {
         showLoadingProgress();
-
-        mBringgProvider.getClient().loginActions().loginWithCredentials(mEmail, null, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
-
+        BringgSDKClient.getInstance().loginActions().loginWithCredentials(mEmail, null, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
     }
 
-    private void loginWithQR(String scanTex) {
-        try {
-            Log.d(TAG, scanTex);
-            JSONObject jScan = new JSONObject(scanTex);
-            String token = jScan.getString("token");
-            String secret = jScan.getString("secret");
-            String region = jScan.getString("region");
-            mBringgProvider.getClient().loginActions().loginWithQRCode(region, token, secret, mApiRequestCallback);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+    private void loginWithQR(String scanText) {
+        showLoadingProgress();
+        BringgSDKClient.getInstance().loginActions().loginWithQRCode(scanText, mApiRequestCallback);
     }
 
     @Override
@@ -175,7 +189,6 @@ public class LoginActivity extends BaseActivity {
     }
 
     private class ViewLoginListenerImpl implements LoginWithPhoneView.ViewPhoneLoginListener, LoginWithEmailView.ViewEmailLoginListener {
-
 
         @Override
         public void onPhoneNumberInsert(String phone) {
@@ -198,8 +211,7 @@ public class LoginActivity extends BaseActivity {
 
         private void requestConfirmation(String phone) {
             showLoadingProgress();
-            //TODO need to move to loginAction()
-            mBringgProvider.getClient().credentialsActions().requestConfirmation(phone, Locale.getDefault().getCountry(), mApiRequestCallback);
+            BringgSDKClient.getInstance().loginActions().requestConfirmation(phone, Locale.getDefault().getCountry(), mApiRequestCallback);
         }
     }
 
@@ -235,12 +247,8 @@ public class LoginActivity extends BaseActivity {
         @Override
         public void onLoginSuccess() {
             hideLoadingProgress();
-            if (getApplication() instanceof BringgApp) {
-                ((BringgApp) getApplication()).notifyLoginSuccess();
-            }
             setResult(RESULT_OK);
             finish();
-
         }
 
         @Override
@@ -265,5 +273,4 @@ public class LoginActivity extends BaseActivity {
                     .build().show();
         }
     }
-
 }

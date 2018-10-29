@@ -1,7 +1,5 @@
 package com.bringg.exampleapp;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -13,31 +11,15 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.util.Log;
 
-
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
-
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import driver_sdk.BringgSDKBuilder;
 import driver_sdk.LeanBringgSDKClient;
 import driver_sdk.PermissionVerifier;
-import driver_sdk.ShiftStatusListener;
-import driver_sdk.connection.realtime.api.RealTimeEventCallback;
-import driver_sdk.models.CancellationReason;
-import driver_sdk.models.NoteData;
-import driver_sdk.models.User;
-import driver_sdk.models.WayPointUpdatedDataFromEvent;
-import driver_sdk.models.tasks.PendingTasksData;
-import driver_sdk.models.tasks.Task;
-import driver_sdk.models.tasks.Waypoint;
 import driver_sdk.providers.NotificationProvider;
 import driver_sdk.shift.ShiftEventsListener;
-import driver_sdk.storage.db.SecuredStorage;
-import driver_sdk.storage.db.SecuredStorageProvider;
 import driver_sdk.tasks.TaskEventListener;
 
 public class BringgProvider {
@@ -105,15 +87,17 @@ public class BringgProvider {
         @Override
         public void requestPermissionWithResult(@NonNull Context context, @NonNull String[] permissions, @NonNull OnPermissionsResultListener resultListener) {
             BaseActivity activity = mUIController.getCurrentActivity();
-            if (activity == null)
+            if (activity == null) {
+                resultListener.onRequestPermissionsResult(Arrays.asList(permissions));
                 return;
+            }
             activity.setOnPermissionsResultListener(resultListener);
             activity.requestPermissions(permissions, 0);
         }
     }
 
     private class NotificationProviderImpl implements NotificationProvider {
-        @NotNull
+        @NonNull
         @Override
         public Notification getShiftNotification() {
             return generateNotification();

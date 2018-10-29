@@ -3,27 +3,26 @@ package com.bringg.exampleapp.tasks;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.bringg.exampleapp.R;
-import com.bringg.exampleapp.shifts.ShiftHelperActivity;
 import com.bringg.exampleapp.shifts.ShiftHelper;
+import com.bringg.exampleapp.shifts.ShiftHelperActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import driver_sdk.models.Task;
 import driver_sdk.models.Waypoint;
-import driver_sdk.tasks.TaskEventListener;
 
 public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 

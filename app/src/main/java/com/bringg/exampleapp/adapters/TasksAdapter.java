@@ -1,5 +1,6 @@
 package com.bringg.exampleapp.adapters;
 
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +16,6 @@ import driver_sdk.models.Task;
 
 public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHolder> {
 
-
     private final List<Task> mItems;
     private final TasksAdapterListener mListener;
 
@@ -24,14 +24,15 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         mListener = listener;
     }
 
+    @NonNull
     @Override
-    public TaskViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public TaskViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_task, parent, false);
         return new TaskViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(TaskViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull TaskViewHolder holder, int position) {
         holder.onBind(mItems.get(position));
     }
 
@@ -47,7 +48,7 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         private final TextView mTvTitle;
         private final View mTvNotAccepted;
 
-        public TaskViewHolder(View itemView) {
+        TaskViewHolder(View itemView) {
             super(itemView);
             mTvAddress = itemView.findViewById(R.id.tv_task_address);
             mTvTitle = itemView.findViewById(R.id.tv_task_title);
@@ -63,7 +64,7 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
 
         }
 
-        public void onBind(Task task) {
+        void onBind(Task task) {
             driver_sdk.models.tasks.Task taskModel = (driver_sdk.models.tasks.Task) task;
             mTvAddress.setText(taskModel.getExtendedAddress());
             mTvDateStart.setText(Utils.isoToStringDate(taskModel.getScheduledAt()));

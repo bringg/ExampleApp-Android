@@ -1,14 +1,9 @@
 package com.bringg.exampleapp.shifts;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import com.bringg.exampleapp.BaseActivity;
 import com.bringg.exampleapp.BringgApp;
-
-import driver_sdk.connection.services.RequestQueueService;
-
-import static com.bringg.exampleapp.BringgProvider.EMPTY_USER;
 
 abstract public class ShiftHelperActivity extends BaseActivity {
     private ShiftHelper mShiftHelper;

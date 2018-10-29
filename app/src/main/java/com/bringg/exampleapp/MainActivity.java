@@ -1,9 +1,7 @@
 package com.bringg.exampleapp;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
@@ -16,12 +14,10 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bringg.exampleapp.adapters.TasksAdapter;
-import com.bringg.exampleapp.database.Pref;
 import com.bringg.exampleapp.login.LoginActivity;
 import com.bringg.exampleapp.shifts.ShiftHelper;
 import com.bringg.exampleapp.shifts.ShiftHelperActivity;
@@ -32,8 +28,6 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import driver_sdk.connection.services.RequestQueueService;
 
 import driver_sdk.models.CancellationReason;
 import driver_sdk.models.Task;
@@ -137,8 +131,8 @@ public class MainActivity extends ShiftHelperActivity {
         String img = user.getImageUrl();
         if (!TextUtils.isEmpty(img)) {
             if (!img.contains("http"))
-                img = new StringBuilder(BASE_HOST).append(img).toString();
-            Picasso.with(MainActivity.this).load(img).transform(new CircleTransform()).into(mImgUser);
+                img = BASE_HOST + img;
+            Picasso.get().load(img).transform(new CircleTransform()).into(mImgUser);
         }
     }
 
@@ -206,7 +200,7 @@ public class MainActivity extends ShiftHelperActivity {
         mNavigationView = findViewById(R.id.nav_view);
         mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem menuItem) {
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.nav_end_shift:
                     case R.id.nav_start_shift:
@@ -231,8 +225,8 @@ public class MainActivity extends ShiftHelperActivity {
             }
         };
         mDrawerLayout.addDrawerListener(mDrawerToggle);
-        mImgUser = (ImageView) mNavigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
-        mTvUserName = (TextView) mNavigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
+        mImgUser = mNavigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
+        mTvUserName = mNavigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
 
     }
 
@@ -296,7 +290,7 @@ public class MainActivity extends ShiftHelperActivity {
 
     private class TasksResultCallbackImpl implements GetTasksResultCallback, RefreshTasksResultCallback {
 
-        public void onTaskResult(List<Task> tasks) {
+        void onTaskResult(List<Task> tasks) {
             if (isDestroyed())
                 return;
             hideLoadingProgress();
@@ -315,7 +309,7 @@ public class MainActivity extends ShiftHelperActivity {
         }
 
         @Override
-        public void onTasksResult(List<Task> tasks, long lastTimeUpdated) {
+        public void onTasksResult(@NonNull List<Task> tasks, long lastTimeUpdated) {
             onTaskResult(tasks);
         }
 
@@ -328,9 +322,8 @@ public class MainActivity extends ShiftHelperActivity {
         }
 
         @Override
-        public void onRefreshTasksSuccess(OpenTasksResult openTasksResult) {
-
-            onTaskResult((List<Task>) (Object) openTasksResult.getTasks());
+        public void onRefreshTasksSuccess(@NonNull OpenTasksResult openTasksResult) {
+            onTaskResult(openTasksResult.getTasks());
         }
     }
 }

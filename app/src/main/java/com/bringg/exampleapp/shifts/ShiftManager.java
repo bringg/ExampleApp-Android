@@ -1,22 +1,12 @@
 package com.bringg.exampleapp.shifts;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.ResultReceiver;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.bringg.exampleapp.BringgProvider;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.lang.ref.WeakReference;
-
 import driver_sdk.LeanBringgSDKClient;
-import driver_sdk.connection.services.RequestQueueService;
 import driver_sdk.shift.EndShiftCallback;
 import driver_sdk.shift.GetShiftResultCallback;
 import driver_sdk.shift.Shift;
@@ -25,7 +15,7 @@ import driver_sdk.shift.StartShiftResultCallback;
 
 public class ShiftManager implements ShiftEventsListener {
 
-    public static final String TAG = ShiftManager.class.getSimpleName();
+    private static final String TAG = ShiftManager.class.getSimpleName();
     private final LeanBringgSDKClient mClient;
 
 
@@ -39,7 +29,7 @@ public class ShiftManager implements ShiftEventsListener {
         mShiftResultCallback = new ShiftResultCallbackImpl();
     }
 
-    public void setOnShiftUpdateListener(@NonNull OnShiftUpdateListener listener) {
+    void setOnShiftUpdateListener(@NonNull OnShiftUpdateListener listener) {
         mListener = listener;
     }
 
@@ -51,7 +41,7 @@ public class ShiftManager implements ShiftEventsListener {
         mClient.shiftActions().getShiftStatusFromRemote(mShiftResultCallback);
     }
 
-    public void updateShiftState(boolean inShift) {
+    void updateShiftState(boolean inShift) {
         if (inShift)
             mClient.shiftActions().startShiftAndWaitForApproval(true, mShiftResultCallback);
         else
@@ -71,7 +61,7 @@ public class ShiftManager implements ShiftEventsListener {
     private class ShiftResultCallbackImpl implements GetShiftResultCallback, StartShiftResultCallback, EndShiftCallback {
 
         @Override
-        public void onGetShiftStatusResult(@NotNull Shift shift) {
+        public void onGetShiftStatusResult(@NonNull Shift shift) {
             Log.d(TAG, "onGetShiftStatusResult");
             notifyShiftUpdate(shift);
         }

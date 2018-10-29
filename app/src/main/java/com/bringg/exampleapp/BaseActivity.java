@@ -1,12 +1,9 @@
 package com.bringg.exampleapp;
 
-import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -14,10 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
 
-import com.bringg.exampleapp.utils.Utils;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,7 +26,7 @@ import driver_sdk.tasks.TaskEventListener;
 
 public class BaseActivity extends AppCompatActivity implements TaskEventListener {
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 3;
-    private static final int REQUEST_CODE_CAMERA = 4;
+    public static final int REQUEST_CODE_CAMERA = 4;
     public static final String TAG = BaseActivity.class.getSimpleName();
 
     protected BringgProvider mBringgProvider;
@@ -67,7 +61,7 @@ public class BaseActivity extends AppCompatActivity implements TaskEventListener
             onRequestCameraResult(grantResults[0] == PackageManager.PERMISSION_GRANTED);
         }
         if (onPermissionsResultListener != null) {
-            List<String> deniedPermissions = new ArrayList<String>();
+            List<String> deniedPermissions = new ArrayList<>();
 
             for (int i = 0; i < permissions.length; i++) {
                 if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
@@ -79,44 +73,15 @@ public class BaseActivity extends AppCompatActivity implements TaskEventListener
     }
 
     protected void onRequestCameraResult(boolean allow) {
-
     }
 
     protected void onRequestWriteExternalStorageResult(boolean allow) {
-
-    }
-
-    private boolean askPermission(String manifestPermission, int requestCode) {
-
-        if (Utils.isNeedAskRuntimePermission() && ContextCompat.checkSelfPermission(this, manifestPermission) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{manifestPermission}, requestCode);
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean askCameraPermission() {
-
-        if (Utils.isNeedAskRuntimePermission() && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_CAMERA);
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean askWriteToExternalStoragePermission() {
-        if (Utils.isNeedAskRuntimePermission() && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_WRITE_EXTERNAL_STORAGE);
-            return true;
-        }
-        return false;
     }
 
     protected void showLoadingProgress() {
         hideLoadingProgress();
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(BaseActivity.this);
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View dialogView = inflater.inflate(R.layout.progress_dialog_layout, null);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.progress_dialog_layout, null);
         dialogBuilder.setView(dialogView);
         dialogBuilder.setCancelable(false);
         mLoadingDialog = dialogBuilder.create();

@@ -180,8 +180,10 @@ public class MainActivity extends ShiftHelperActivity {
 
     @Override
     public void onTaskAdded(@NonNull Task task) {
-        if (mTvListEmpty.getVisibility() == View.VISIBLE)
+        if (mTvListEmpty.getVisibility() == View.VISIBLE) {
             mTvListEmpty.setVisibility(View.GONE);
+            mRecycleView.setVisibility(View.VISIBLE);
+        }
         super.onTaskAdded(task);
         mTasks.add(task);
         mTasksAdapter.notifyItemRangeInserted(mTasks.size() - 1, 1);

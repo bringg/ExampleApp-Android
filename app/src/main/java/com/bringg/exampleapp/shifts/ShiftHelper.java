@@ -1,21 +1,18 @@
 package com.bringg.exampleapp.shifts;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 
-import com.bringg.exampleapp.BringgApp;
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.utils.Utils;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import driver_sdk.connection.services.RequestQueueService;
+import driver_sdk.BringgSDKClient;
 import driver_sdk.shift.Shift;
 
-import static com.bringg.exampleapp.shifts.ShiftHelper.ShiftState.UNKNOWN;
+import static com.bringg.exampleapp.shifts.ShiftHelper.ShiftState.SHIFT_OFF;
+import static com.bringg.exampleapp.shifts.ShiftHelper.ShiftState.SHIFT_ON;
 
 public class ShiftHelper {
 
@@ -23,18 +20,18 @@ public class ShiftHelper {
     private final Context mContext;
 
     public enum ShiftState {
-        UNKNOWN,
         SHIFT_ON,
         SHIFT_OFF
     }
 
     private final CopyOnWriteArrayList<ShiftStateHelperListener> mListeners = new CopyOnWriteArrayList<>();
-    private ShiftState mState = UNKNOWN;
+    private ShiftState mState;
     private ShiftManager mShiftManager;
 
     public ShiftHelper(Context context, @NonNull ShiftManager shiftManager) {
         mContext = context;
         mShiftManager = shiftManager;
+        mState = BringgSDKClient.getInstance().shiftState().isOnShift() ? SHIFT_ON : SHIFT_OFF;
         mShiftManager.setOnShiftUpdateListener(new OnShiftUpdateListenerImpl());
     }
 
@@ -76,6 +73,7 @@ public class ShiftHelper {
         mListeners.remove(listener);
 
     }
+
     private void updateState(@NonNull Shift shift) {
 
         if (shift.on)

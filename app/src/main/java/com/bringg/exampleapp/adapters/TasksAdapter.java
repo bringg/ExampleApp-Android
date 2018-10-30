@@ -41,6 +41,10 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         return mItems.size();
     }
 
+    public interface TasksAdapterListener {
+        void onItemSelected(long taskId);
+    }
+
     class TaskViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView mTvAddress;
@@ -58,7 +62,7 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mListener.onItemSelected(mItems.get(getAdapterPosition()));
+                    mListener.onItemSelected(mItems.get(getAdapterPosition()).getId());
                 }
             });
 
@@ -74,9 +78,5 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
             else
                 mTvNotAccepted.setVisibility(View.VISIBLE);
         }
-    }
-
-    public interface TasksAdapterListener {
-        void onItemSelected(Task task);
     }
 }

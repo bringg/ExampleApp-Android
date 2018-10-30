@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import driver_sdk.BringgSDKClient;
 import driver_sdk.models.CancellationReason;
 import driver_sdk.models.Task;
 import driver_sdk.models.User;
@@ -41,7 +42,6 @@ import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 public class MainActivity extends ShiftHelperActivity {
 
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
-    private static final int REQUEST_CODE_TASK_ACTIVITY = 2;
     private DrawerLayout mDrawerLayout;
     private Toolbar mToolBar;
     private ImageView mImgUser;
@@ -58,7 +58,8 @@ public class MainActivity extends ShiftHelperActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initViews();
+        mTvListEmpty = findViewById(R.id.tv_empty_list_task);
+        mTvListEmpty.setVisibility(View.GONE);
         initActionBar();
         initDrawer();
         initRecycleView();
@@ -70,9 +71,46 @@ public class MainActivity extends ShiftHelperActivity {
         }
     }
 
-    private void initViews() {
-        mTvListEmpty = findViewById(R.id.tv_empty_list_task);
-        mTvListEmpty.setVisibility(View.GONE);
+    private void initActionBar() {
+        mToolBar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolBar);
+        ActionBar actionbar = getSupportActionBar();
+        actionbar.setDisplayHomeAsUpEnabled(true);
+        actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp);
+    }
+
+    private void initDrawer() {
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        mNavigationView = findViewById(R.id.nav_view);
+        mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                switch (menuItem.getItemId()) {
+                    case R.id.nav_end_shift:
+                    case R.id.nav_start_shift:
+                        toggleShift();
+                        break;
+                    case R.id.nav_change_account:
+                        logOut();
+                        break;
+                }
+                menuItem.setChecked(true);
+                mDrawerLayout.closeDrawers();
+                return true;
+            }
+        });
+        ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolBar, R.string.drawer_open, R.string.drawer_close) {
+            public void onDrawerOpened(View drawerView) {
+                invalidateOptionsMenu();
+            }
+
+            public void onDrawerClosed(View view) {
+                invalidateOptionsMenu();
+            }
+        };
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mImgUser = mNavigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
+        mTvUserName = mNavigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
     }
 
     private void startLoginActivityForResult() {
@@ -195,72 +233,9 @@ public class MainActivity extends ShiftHelperActivity {
         mRecycleView.setAdapter(mTasksAdapter);
     }
 
-    private void initDrawer() {
-        mDrawerLayout = findViewById(R.id.drawer_layout);
-        mNavigationView = findViewById(R.id.nav_view);
-        mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                switch (menuItem.getItemId()) {
-                    case R.id.nav_end_shift:
-                    case R.id.nav_start_shift:
-                        toggleShift();
-                        break;
-                    case R.id.nav_change_account:
-                        logOut();
-                        break;
-                }
-                menuItem.setChecked(true);
-                mDrawerLayout.closeDrawers();
-                return true;
-            }
-        });
-        ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolBar, R.string.drawer_open, R.string.drawer_close) {
-            public void onDrawerOpened(View drawerView) {
-                invalidateOptionsMenu();
-            }
-
-            public void onDrawerClosed(View view) {
-                invalidateOptionsMenu();
-            }
-        };
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
-        mImgUser = mNavigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
-        mTvUserName = mNavigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
-
-    }
-
     private void logOut() {
         mBringgProvider.getClient().loginActions().logout();
         startLoginActivityForResult();
-    }
-
-    private void initActionBar() {
-        mToolBar = findViewById(R.id.toolbar);
-        setSupportActionBar(mToolBar);
-        ActionBar actionbar = getSupportActionBar();
-        actionbar.setDisplayHomeAsUpEnabled(true);
-        actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp);
-        findViewById(R.id.btn_delete).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-               /* LoggerDebug.get().clear();
-                Intent intent = new Intent(MainActivity.this, RequestQueueService.class);
-                intent.setAction(ACTION_DELETE_DB);
-                startService(intent);*/
-            }
-        });
-        findViewById(R.id.btn_log).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.yossibarel.logger");
-                if (launchIntent != null) {
-                    startActivity(launchIntent);//null pointer check in case package name was not found
-                }
-            }
-        });
-
-
     }
 
     @Override
@@ -268,13 +243,11 @@ public class MainActivity extends ShiftHelperActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case REQUEST_CODE_LOGIN_ACTIVITY:
-                if (resultCode != RESULT_OK)
-                    finish();
-                else
+                if (BringgSDKClient.getInstance().loginState().isLoggedIn()) {
                     onUserLogin();
-                break;
-            case REQUEST_CODE_TASK_ACTIVITY:
-                notifyDataSetChanged();
+                } else {
+                    finish();
+                }
                 break;
         }
     }
@@ -283,8 +256,8 @@ public class MainActivity extends ShiftHelperActivity {
     private class TasksAdapterListenerImpl implements TasksAdapter.TasksAdapterListener {
 
         @Override
-        public void onItemSelected(Task task) {
-            startActivityForResult(TaskActivity.getIntent(MainActivity.this, task.getId()), REQUEST_CODE_TASK_ACTIVITY);
+        public void onItemSelected(long taskId) {
+            startActivity(TaskActivity.getIntent(MainActivity.this, taskId));
         }
     }
 

@@ -14,7 +14,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,7 +37,6 @@ import driver_sdk.models.Waypoint;
 import driver_sdk.shift.StartShiftResultCallback;
 import driver_sdk.tasks.LeaveWayPointActionCallback;
 import driver_sdk.tasks.TaskActionCallback;
-import driver_sdk.tasks.TaskActionEventListener;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
@@ -201,9 +199,9 @@ public class WayPointFragment extends Fragment implements View.OnClickListener {
                 mBtnAction.setVisibility(View.GONE);
                 break;
             case STARTED:
+            case STARTED_AND_CURRENT_WAYPOINT_ON_SITE:
                 WayPointState wayPointState = mTask.getWayPointState(mWaypoint.getId());
                 updateViewsByWayPointState(wayPointState);
-                break;
             case DONE:
                 break;
         }

@@ -18,11 +18,13 @@ import driver_sdk.PermissionVerifier;
 public class BaseActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE = 3;
-    public static final int REQUEST_CODE_CAMERA = 4;
     public static final String TAG = BaseActivity.class.getSimpleName();
 
     private AlertDialog mLoadingDialog;
     private boolean mIsForeground;
+
+    // this is a callback that Bringg SDK uses to request mandatory permissions and wait for response,
+    // implementation should display permission request to the user and then return a list with the denied permissions
     private PermissionVerifier.OnPermissionsResultListener onPermissionsResultListener;
 
     @Override
@@ -31,9 +33,6 @@ public class BaseActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE) {
             onRequestWriteExternalStorageResult(grantResults[0] == PackageManager.PERMISSION_GRANTED);
             return;
-        }
-        if (requestCode == REQUEST_CODE_CAMERA) {
-            onRequestCameraResult(grantResults[0] == PackageManager.PERMISSION_GRANTED);
         }
         if (onPermissionsResultListener != null) {
             List<String> deniedPermissions = new ArrayList<>();
@@ -45,9 +44,6 @@ public class BaseActivity extends AppCompatActivity {
             }
             onPermissionsResultListener.onRequestPermissionsResult(deniedPermissions);
         }
-    }
-
-    protected void onRequestCameraResult(boolean allow) {
     }
 
     protected void onRequestWriteExternalStorageResult(boolean allow) {

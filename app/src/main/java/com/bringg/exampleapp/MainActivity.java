@@ -28,18 +28,24 @@ import com.bringg.exampleapp.utils.CircleTransform;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import driver_sdk.BringgSDKClient;
+import driver_sdk.models.CancellationReason;
+import driver_sdk.models.NoteData;
 import driver_sdk.models.Task;
 import driver_sdk.models.User;
+import driver_sdk.models.Waypoint;
+import driver_sdk.models.tasks.PendingTasksData;
 import driver_sdk.tasks.GetTasksResultCallback;
 import driver_sdk.tasks.OpenTasksResult;
 import driver_sdk.tasks.RefreshTasksResultCallback;
+import driver_sdk.tasks.TaskEventListener;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class MainActivity extends ShiftStateAwareActivity {
+public class MainActivity extends ShiftStateAwareActivity implements TaskEventListener {
 
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
     private DrawerLayout mDrawerLayout;
@@ -166,9 +172,19 @@ public class MainActivity extends ShiftStateAwareActivity {
      */
     @Override
     protected void onShiftStateChanged(boolean isOnShift) {
-        hideLoadingProgress();
         mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(isOnShift);
         mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(!isOnShift);
+        if (isOnShift) {
+            BringgSDKClient.getInstance().taskEvents().registerTaskEventListener(this);
+        } else {
+            BringgSDKClient.getInstance().taskEvents().unRegisterTaskEventListener(this);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        BringgSDKClient.getInstance().taskEvents().unRegisterTaskEventListener(this);
     }
 
     /**
@@ -182,7 +198,6 @@ public class MainActivity extends ShiftStateAwareActivity {
      */
     @Override
     protected void showResponseError(@NonNull String message) {
-        hideLoadingProgress();
         Snackbar.make(mTvListEmpty, message, Snackbar.LENGTH_LONG).show();
     }
 
@@ -313,6 +328,86 @@ public class MainActivity extends ShiftStateAwareActivity {
         mTasks = new ArrayList<>();
         mTasksAdapter = new TasksAdapter(mTasks, new TasksAdapterListenerImpl());
         mRecycleView.setAdapter(mTasksAdapter);
+    }
+
+    // ---------------------------------- TaskEventListener implementation ---------------------------------- //
+    // this interface is called from Bringg SDK when tasks are updated/added/removed from the current task list
+    // the events may be a result of user actions or remote updates
+    // we use a naive implementation here for demo purposes that will just refresh the whole task list
+    // real implementation should use the proper recyclerView adapter methods (remove, update, etc.)
+    @Override
+    public void onTaskAdded(@NonNull Task newTask) {
+        Log.d(TAG, "onTaskAdded");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTaskUpdated(@NonNull Task task) {
+        Log.d(TAG, "onTaskUpdated");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTaskRemoved(long taskId) {
+        Log.d(TAG, "onTaskRemoved");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTaskCanceled(long id, @Nullable String externalId, @Nullable CancellationReason cancellationReason) {
+        Log.d(TAG, "onTaskCanceled");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTasksAdded(@NonNull Collection<Task> tasks) {
+        Log.d(TAG, "onTasksAdded");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTasksUpdated(@NonNull Collection<Task> tasks) {
+        Log.d(TAG, "onTasksUpdated");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTasksRemoved(@NonNull Collection<Long> removedTaskIds) {
+        Log.d(TAG, "onTasksRemoved");
+        updateTaskList();
+    }
+
+    @Override
+    public void onTasksLoaded(@NonNull Collection<Task> tasks) {
+        Log.d(TAG, "onTasksLoaded");
+        updateTaskList();
+    }
+
+    @Override
+    public void onPendingTaskDataUpdated(@NonNull PendingTasksData pendingTasksData) {
+        Log.d(TAG, "onPendingTaskDataUpdated");
+    }
+
+    @Override
+    public void onGrabTaskAdded(@NonNull Task task) {
+        Log.d(TAG, "onGrabTaskAdded");
+    }
+
+    @Override
+    public void onFutureTaskListUpdated(@NonNull List<Task> futureTasks) {
+        Log.d(TAG, "onFutureTaskListUpdated");
+    }
+
+    @Override
+    public void onMassTasksRemove(@NonNull List<Task> removedTasks, @Nullable CancellationReason cancellationReason) {
+        Log.d(TAG, "onMassTasksRemove");
+        updateTaskList();
+    }
+
+    @Override
+    public void onWayPointAdded(@NonNull Task task, @NonNull Waypoint waypoint) {
+        Log.d(TAG, "onWayPointAdded");
+        updateTaskList();
     }
 
     private class TasksAdapterListenerImpl implements TasksAdapter.TasksAdapterListener {

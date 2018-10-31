@@ -59,7 +59,9 @@ public class ShiftControlView extends FrameLayout implements ShiftStateListener 
         mBtnToggleShift.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 showInProgress();
+
                 if (isOnShift()) {
                     // we are currently on shift, call end shift and handle the async response
                     // global ShiftStateListener will be also notified automatically with this call result
@@ -159,6 +161,11 @@ public class ShiftControlView extends FrameLayout implements ShiftStateListener 
 
     @Override
     public void onEndShiftRequestSuccess() {
+        updateView();
+    }
+
+    @Override
+    public void onEndShiftAcknowledged() {
         updateView();
     }
 

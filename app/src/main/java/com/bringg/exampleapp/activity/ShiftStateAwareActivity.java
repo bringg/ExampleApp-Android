@@ -97,16 +97,21 @@ public abstract class ShiftStateAwareActivity extends BaseActivity implements Sh
     // shift state change events:
     @Override
     public void onShiftStarted(long shiftId) {
+        Log.i(TAG, "shift started success");
+        hideLoadingProgress();
         handleShiftStateChanged();
     }
 
     @Override
     public void onShiftEnded() {
+        Log.i(TAG, "shift ended locally");
+        hideLoadingProgress();
         handleShiftStateChanged();
     }
 
     @Override
     public void onShiftEndedFromRemote(long shiftId, @NonNull String deviceId) {
+        hideLoadingProgress();
         handleShiftStateChanged();
     }
 
@@ -120,17 +125,27 @@ public abstract class ShiftStateAwareActivity extends BaseActivity implements Sh
     @Override
     public void onStartShiftFailed(int responseCode) {
         Log.e(TAG, "shift start failed, error code=" + responseCode);
+        hideLoadingProgress();
         showResponseError("Failed stating shift on server");
     }
 
     @Override
     public void onEndShiftRequestSuccess() {
         Log.i(TAG, "shift end reported to the server successfully");
+        hideLoadingProgress();
+    }
+
+    @Override
+    public void onEndShiftAcknowledged() {
+        Log.i(TAG, "shift end has been acknowledged by the server");
+        hideLoadingProgress();
+        handleShiftStateChanged();
     }
 
     @Override
     public void onEndShiftRequestFailed(int errorCode) {
         Log.e(TAG, "shift end reporting to the server failed, error=" + errorCode);
+        hideLoadingProgress();
         showResponseError("shift end reporting to the server failed");
     }
 

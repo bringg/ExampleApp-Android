@@ -30,16 +30,18 @@ import driver_sdk.account.RequestConfirmationCallback;
 
 public class LoginActivity extends BaseActivity {
 
-    private static final int REQ_CODE_QR_SCANNER = 22;
     public static final String TAG = LoginActivity.class.getSimpleName();
+
+    private static final int REQ_CODE_QR_SCANNER = 22;
+    private static final int REQUEST_CODE_CAMERA = 101;
+
     private RadioGroup mRgLoginType;
-    private LoginWithEmailView mViewMailLogin;
     private LoginWithPhoneView mViewPhoneLogin;
     private TypeLogin mTypeLogin;
     private ApiRequestCallbackImpl mApiRequestCallback;
+    private String mEmail;
     private String mPhone;
     private String mPassword;
-    private String mEmail;
     private ViewAnimator mVsLoginViewContainer;
 
     enum TypeLogin {
@@ -64,23 +66,17 @@ public class LoginActivity extends BaseActivity {
         mVsLoginViewContainer.setVisibility(View.INVISIBLE);
 
         mRgLoginType = findViewById(R.id.rg_login_type);
-        mViewMailLogin = findViewById(R.id.v_login_with_mail);
         mViewPhoneLogin = findViewById(R.id.v_login_with_phone);
 
         ViewLoginListenerImpl loginListener = new ViewLoginListenerImpl();
         mViewPhoneLogin.setListener(loginListener);
-        mViewMailLogin.setListener(loginListener);
+        LoginWithEmailView viewMailLogin = findViewById(R.id.v_login_with_mail);
+        viewMailLogin.setListener(loginListener);
         initRadioGroup();
     }
 
     private void checkEmailLoginRadioBtn() {
         ((Checkable) findViewById(R.id.rb_email)).setChecked(true);
-    }
-
-    @Override
-    protected void onRequestCameraResult(boolean allow) {
-        if (allow)
-            startScanActivityWithPermissionCheck();
     }
 
     private void initRadioGroup() {
@@ -126,7 +122,7 @@ public class LoginActivity extends BaseActivity {
 
     private void startScanActivityWithPermissionCheck() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, BaseActivity.REQUEST_CODE_CAMERA);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_CAMERA);
         } else {
             startScanActivity();
         }
@@ -140,7 +136,7 @@ public class LoginActivity extends BaseActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == BaseActivity.REQUEST_CODE_CAMERA) {
+        if (requestCode == REQUEST_CODE_CAMERA) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 startScanActivity();
             } else {
@@ -161,22 +157,6 @@ public class LoginActivity extends BaseActivity {
         }
     }
 
-    private void loginWithPhone(@Nullable String merchantId) {
-        showLoadingProgress();
-        BringgSDKClient.getInstance().loginActions().loginWithCredentials(null, mPhone, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
-
-    }
-
-    private void loginWithMail(String merchantId) {
-        showLoadingProgress();
-        BringgSDKClient.getInstance().loginActions().loginWithCredentials(mEmail, null, mPassword, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
-    }
-
-    private void loginWithQR(String scanText) {
-        showLoadingProgress();
-        BringgSDKClient.getInstance().loginActions().loginWithQRCode(scanText, mApiRequestCallback);
-    }
-
     @Override
     public void onBackPressed() {
         if (mViewPhoneLogin.getVisibility() == View.VISIBLE) {
@@ -185,6 +165,87 @@ public class LoginActivity extends BaseActivity {
         }
         super.onBackPressed();
     }
+
+    // ------------------------------- login actions implementation ------------------------------- //
+    // all login actions will return to the callback implementation
+
+
+    /**
+     * Use the SDK to login using phone number and sms verification code
+     *
+     * @param phone               phone number
+     * @param smsVerificationCode verification code from sms
+     * @param merchantId          optional:
+     *                            there are two scenarios:
+     *                            1. The user is registered on Bringg server with a single merchant - login flow will continue and callback will be called with the login response.
+     *                            2. The user is listed with more than one merchant on Bringg server -
+     *                            login flow will call the LoginCallback.onLoginMultipleResults with the list of possible merchants,
+     *                            implantation should call the login again with a single selected merchantID
+     */
+    private void loginWithPhone(@NonNull String phone, @NonNull String smsVerificationCode, @Nullable String merchantId) {
+        showLoadingProgress();
+        BringgSDKClient.getInstance().loginActions().loginWithPhone(phone, smsVerificationCode, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+    }
+
+    /**
+     * Use the SDK to login using user email and password
+     *
+     * @param email      user email
+     * @param password   user password
+     * @param merchantId optional:
+     *                   there are two scenarios:
+     *                   1. The user is registered on Bringg server with a single merchant - login flow will continue and callback will be called with the login response.
+     *                   2. The user is listed with more than one merchant on Bringg server -
+     *                   login flow will call the LoginCallback.onLoginMultipleResults with the list of possible merchants,
+     *                   implantation should call the login again with a single selected merchantID
+     */
+    private void loginWithEmail(@NonNull String email, @NonNull String password, @Nullable String merchantId) {
+        showLoadingProgress();
+        BringgSDKClient.getInstance().loginActions().loginWithEmail(email, password, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+    }
+
+    /**
+     * Use the SDK to login using QR code scan
+     *
+     * @param scanText the scan result
+     */
+    private void loginWithQR(@NonNull String scanText) {
+        showLoadingProgress();
+        BringgSDKClient.getInstance().loginActions().loginWithQRCode(scanText, mApiRequestCallback);
+    }
+
+    /**
+     * Send a confirmation sms request to Bringg server, if Bringg recognize the user a confirmation code will be sent by sms.
+     * implementation should then call BringgSDKClient.getInstance().loginActions().loginWithPhone() providing the verification code
+     *
+     * @param phone user phone number
+     */
+    private void requestConfirmation(String phone) {
+        showLoadingProgress();
+
+        // send sms confirmation code request to Bringg
+        BringgSDKClient.getInstance().loginActions().requestConfirmation(phone, Locale.getDefault().getCountry(), new RequestConfirmationCallback() {
+
+            @Override
+            public void onRequestConfirmationSuccess() {
+                hideLoadingProgress();
+                mViewPhoneLogin.notifyRequestConfirmationSuccess();
+            }
+
+            @Override
+            public void onRequestConfirmationError() {
+                hideLoadingProgress();
+                showErrorMessage("Confirmation request error");
+            }
+
+            @Override
+            public void onRequestConfirmationCanceled() {
+                hideLoadingProgress();
+                showErrorMessage("Confirmation request canceled");
+            }
+        });
+    }
+    // --------------------------------------------------------------------------------------------- //
 
     private class ViewLoginListenerImpl implements LoginWithPhoneView.ViewPhoneLoginListener, LoginWithEmailView.ViewEmailLoginListener {
 
@@ -195,58 +256,39 @@ public class LoginActivity extends BaseActivity {
 
         @Override
         public void onSmsPasswordInsert(String phone, String sms) {
+            // we keep the credentials locally - we might need to select a merchant and re-login with a specific merchant later.
             mPhone = phone;
             mPassword = sms;
-            LoginActivity.this.loginWithPhone(null);
+            loginWithPhone(phone, sms, null);
         }
 
         @Override
         public void loginWithMail(String mail, String password) {
+            // we keep the credentials locally - we might need to select a merchant and re-login with a specific merchant later.
             mEmail = mail;
             mPassword = password;
-            LoginActivity.this.loginWithMail(null);
-        }
-
-        private void requestConfirmation(String phone) {
-            showLoadingProgress();
-            BringgSDKClient.getInstance().loginActions().requestConfirmation(phone, Locale.getDefault().getCountry(), mApiRequestCallback);
+            loginWithEmail(mail, password, null);
         }
     }
 
-    private class ApiRequestCallbackImpl implements RequestConfirmationCallback, LoginCallback {
-
-        @Override
-        public void onRequestConfirmationSuccess() {
-            hideLoadingProgress();
-            mViewPhoneLogin.notifyRequestConfirmationSuccess();
-        }
-
-        @Override
-        public void onRequestConfirmationError() {
-
-        }
-
-        @Override
-        public void onRequestConfirmationCanceled() {
-
-        }
-
-        @Override
-        public void onLoginFailed() {
-            hideLoadingProgress();
-            Snackbar.make(mVsLoginViewContainer, "Login failed", Snackbar.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onLoginCanceled() {
-
-        }
+    private class ApiRequestCallbackImpl implements LoginCallback {
 
         @Override
         public void onLoginSuccess() {
             hideLoadingProgress();
             setResult(RESULT_OK);
             finish();
+        }
+
+        @Override
+        public void onLoginFailed() {
+            hideLoadingProgress();
+            showErrorMessage("Login failed");
+        }
+
+        @Override
+        public void onLoginCanceled() {
+            showErrorMessage("Login canceled");
         }
 
         @Override
@@ -260,15 +302,19 @@ public class LoginActivity extends BaseActivity {
                         public void onSelectedItem(int index, String value) {
                             switch (mTypeLogin) {
                                 case EMAIL:
-                                    loginWithMail(String.valueOf(merchantNamesAndIds.get(value)));
+                                    loginWithEmail(mEmail, mPassword, String.valueOf(merchantNamesAndIds.get(value)));
                                     break;
                                 case PHONE:
-                                    loginWithPhone(String.valueOf(merchantNamesAndIds.get(value)));
+                                    loginWithPhone(mPhone, mPassword, String.valueOf(merchantNamesAndIds.get(value)));
                                     break;
                             }
                         }
                     })
                     .build().show();
         }
+    }
+
+    private void showErrorMessage(@NonNull String message) {
+        Snackbar.make(mVsLoginViewContainer, message, Snackbar.LENGTH_LONG).show();
     }
 }

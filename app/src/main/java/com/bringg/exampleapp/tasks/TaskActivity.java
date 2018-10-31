@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -14,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
@@ -23,20 +23,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import driver_sdk.BringgSDKClient;
+import driver_sdk.content.StartTaskResult;
+import driver_sdk.content.callback.StartTaskCallback;
 import driver_sdk.models.Task;
+import driver_sdk.models.TaskState;
 import driver_sdk.models.Waypoint;
+import driver_sdk.shift.StartShiftResultCallback;
+import driver_sdk.tasks.TaskActionCallback;
 
-public class TaskActivity extends ShiftStateAwareActivity implements TaskListener {
+public class TaskActivity extends ShiftStateAwareActivity implements WayPointFragment.InteractionCallback {
 
     private static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
 
     private Task mTask;
-    private Button mBtnStartTask;
     private ViewPager mViewPager;
     private MyPagerAdapter mAdapterViewPager;
     private List<WayPointFragment> mListFragments;
-    private TaskHelper mTaskHelper;
-    private Toolbar mToolBar;
 
     public static Intent getIntent(Context context, long taskId) {
         Intent intent = new Intent(context, TaskActivity.class);
@@ -52,12 +54,20 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
         long taskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
         if (taskId == 0)
             finish();
+
         mTask = BringgSDKClient.getInstance().taskActions().getTaskById(taskId);
+        // task could be null if it was removed/canceled etc.
+        if (mTask == null) {
+            finish();
+            return;
+        }
+
         initActionBar();
-        findViews();
-        initViews();
-        mTaskHelper = new TaskHelper(this, mTask, new TaskHelperListenerImpl());
-        updateView(mTaskHelper.getTaskState());
+        initViewPager();
+    }
+
+    private void updateCurrentFragment() {
+        mListFragments.get(mViewPager.getCurrentItem()).updateViews();
     }
 
     @Override
@@ -67,7 +77,7 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
     }
 
     private void initActionBar() {
-        mToolBar = findViewById(R.id.toolbar);
+        Toolbar mToolBar = findViewById(R.id.toolbar);
         setSupportActionBar(mToolBar);
         ActionBar actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
@@ -75,50 +85,8 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
         getSupportActionBar().setTitle(mTask.getTitle());
     }
 
-    private void updateView(TaskHelper.TaskState taskState) {
-        switch (taskState) {
-            case ACCEPTED:
-            case NOT_STARTED:
-                mBtnStartTask.setVisibility(View.VISIBLE);
-                break;
-            case STARTED:
-                mBtnStartTask.setVisibility(View.GONE);
-                break;
-            case DONE:
-                finish();
-                return;
-        }
-        updateCurrentFragment();
-    }
-
-    private void initViews() {
-        initViewPager();
-        mBtnStartTask.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startTask();
-            }
-        });
-    }
-
-    private void startTask() {
-        if (!isOnShift()) {
-            showDialogNotInShift();
-            return;
-        }
-        if (isTaskAccepted())
-            mTaskHelper.startTask();
-    }
-
-    private boolean isTaskAccepted() {
-        if (!mTask.isAccepted()) {
-            showDialogAcceptTask();
-            return false;
-        }
-        return true;
-    }
-
     private void initViewPager() {
+        mViewPager = findViewById(R.id.viewpager);
         mAdapterViewPager = new MyPagerAdapter(getSupportFragmentManager(), mListFragments = createFragments());
         mViewPager.setAdapter(mAdapterViewPager);
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -146,50 +114,9 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
     private List<WayPointFragment> createFragments() {
         List<WayPointFragment> fragments = new ArrayList<>();
         for (Waypoint waypoint : mTask.getWayPoints()) {
-            fragments.add(WayPointFragment.newInstance(waypoint.getId()));
+            fragments.add(WayPointFragment.newInstance(waypoint.getTaskId(), waypoint.getId()));
         }
         return fragments;
-    }
-
-    private void showDialogNotInShift() {
-        new AlertDialog.Builder(this).
-                setTitle(R.string.not_in_shift_title).
-                setMessage(R.string.not_in_shift_message).
-                setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        startShift();
-                        dialog.dismiss();
-                    }
-                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        }).show();
-    }
-
-    private void showDialogAcceptTask() {
-        new AlertDialog.Builder(this).
-                setTitle(R.string.task_not_accept_title).
-                setMessage(R.string.task_not_accept_message).
-                setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        mTaskHelper.acceptTask();
-                        dialog.dismiss();
-                    }
-                }).setNegativeButton(R.string.no_now, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        }).show();
-    }
-
-    private void findViews() {
-        mViewPager = findViewById(R.id.viewpager);
-        mBtnStartTask = findViewById(R.id.btn_way_point_action);
     }
 
     private void scrollToFragmentByWayPointId(long wayPointId) {
@@ -197,54 +124,61 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
         mViewPager.setCurrentItem(waypoints.indexOf(mTask.getWayPointById(wayPointId)), true);
     }
 
-    private void updateCurrentFragment() {
-        mListFragments.get(mViewPager.getCurrentItem()).updateViews();
+    // ---------------------------------- WayPointFragment.InteractionCallback implementation ---------------------------------- //
+
+    /**
+     * fragment reported that it couldn't get valid task/waypoint by the id's that were sent to it
+     * this would happen if the task/waypoint was canceled/removed
+     *
+     * @param task       the task if it was found
+     * @param waypointId the waypoint id that failed to be found
+     */
+    @Override
+    public void onWaypointFragmentDataMissing(@Nullable Task task, long waypointId) {
+        finish();
     }
 
-    //****  TaskListener implementation  ****//
-
+    /**
+     * fragment reported that the waypoint is done
+     * the user has left the site and is ready to proceed to the next waypoint
+     *
+     * @param wayPointId the completed waypoint id
+     */
     @Override
-    public void actionWayPoint(long wayPointId) {
-        if (!isOnShift()) {
-            showDialogNotInShift();
-            return;
-        }
-        mTaskHelper.actionWayPoint(wayPointId);
-    }
+    public void onWaypointDone(long wayPointId) {
 
-//    @Override
-//    public void onTaskRemoved(long l) {
-//        super.onTaskRemoved(l);
-//        if (l == getTaskId())
-//            onBackPressed();
-//    }
-
-    @Override
-    public TaskHelper.TaskState getTaskState() {
-        return mTaskHelper.getTaskState();
     }
 
     @Override
-    public TaskHelper.WayPointState getWayPointState(long wayPointId) {
-        return mTaskHelper.getWayPointState(wayPointId);
+    public void onTaskDone(long taskId) {
+        finish();
     }
 
+    /**
+     * fragment reported that the waypoint is done and the next waypoint for this task has been automatically started by Bringg SDK
+     *
+     * @param nextWayPointId the automatically started waypoint id
+     */
     @Override
-    public Waypoint getWayPointById(long wayPointId) {
-        if (mTask == null)
-            return null;
-        return mTask.getWayPointById(wayPointId);
+    public void onNextWaypointStarted(long nextWayPointId) {
+        scrollToFragmentByWayPointId(nextWayPointId);
     }
+    // ------------------------------------------------------------------------------------------------------------------------- //
+
+
+    // ---------------------------------- shift aware activity implementation ---------------------------------- //
 
     @Override
     protected void onShiftStateChanged(boolean isOnShift) {
-
+        // ignore here, we don't have shift state related UI
     }
 
     @Override
     protected void showResponseError(@NonNull String message) {
         Snackbar.make(mViewPager, message, Snackbar.LENGTH_LONG).show();
     }
+    // --------------------------------------------------------------------------------------------------------- //
+
 
     //****************************************//
     private class MyPagerAdapter extends FragmentPagerAdapter {
@@ -269,33 +203,6 @@ public class TaskActivity extends ShiftStateAwareActivity implements TaskListene
         @Override
         public CharSequence getPageTitle(int position) {
             return ((Waypoint) mTask.getWayPoints().toArray()[position]).getCompanyName();
-        }
-    }
-
-    private class TaskHelperListenerImpl implements TaskHelper.TaskStateHelperListener {
-        @Override
-        public void onTaskStateChanged(long taskId, TaskHelper.TaskState state) {
-            if (taskId != mTask.getId())
-                return;
-            if (isFinishing())
-                return;
-            updateView(state);
-        }
-
-        @Override
-        public void onWayPointStateChanged(long wayPointId, TaskHelper.WayPointState state) {
-            if (isFinishing())
-                return;
-            if (state == TaskHelper.WayPointState.STARTED) {
-                scrollToFragmentByWayPointId(wayPointId);
-            }
-            updateCurrentFragment();
-
-        }
-
-        @Override
-        public void onError(String error) {
-            Toast.makeText(TaskActivity.this, error, Toast.LENGTH_SHORT).show();
         }
     }
 }

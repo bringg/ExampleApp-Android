@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -18,7 +19,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bringg.exampleapp.BaseFragment;
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.utils.CircleTransform;
 import com.bringg.exampleapp.utils.Utils;
@@ -28,7 +28,7 @@ import driver_sdk.models.Waypoint;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class WayPointFragment extends BaseFragment implements View.OnClickListener {
+public class WayPointFragment extends Fragment implements View.OnClickListener {
 
     private static final String EXTRA_WAY_POINT_ID = "com.bringg.exampleapp.tasks.EXTRA_WAY_POINT_ID";
     private static final int REQUEST_PERMISSION_CALL_PHONE = 1;
@@ -75,12 +75,12 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_way_point, container, false);
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         findViews(view);
         initViews();
@@ -226,7 +226,6 @@ public class WayPointFragment extends BaseFragment implements View.OnClickListen
     }
 
     private boolean askPermission(String manifestPermission, int requestCode) {
-
         if (Utils.isNeedAskRuntimePermission() && ContextCompat.checkSelfPermission(getContext(), manifestPermission) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{manifestPermission}, requestCode);
             return true;

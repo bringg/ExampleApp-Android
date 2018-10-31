@@ -16,8 +16,8 @@ import android.widget.Checkable;
 import android.widget.RadioGroup;
 import android.widget.ViewAnimator;
 
-import com.bringg.exampleapp.BaseActivity;
 import com.bringg.exampleapp.R;
+import com.bringg.exampleapp.activity.BaseActivity;
 import com.bringg.exampleapp.utils.ScannerActivity;
 import com.bringg.exampleapp.views.dialogs.ListItemDialog;
 
@@ -46,7 +46,6 @@ public class LoginActivity extends BaseActivity {
         EMAIL,
         PHONE,
         QR_CODE
-
     }
 
     public static void start(Context context) {
@@ -185,7 +184,6 @@ public class LoginActivity extends BaseActivity {
                 return;
         }
         super.onBackPressed();
-
     }
 
     private class ViewLoginListenerImpl implements LoginWithPhoneView.ViewPhoneLoginListener, LoginWithEmailView.ViewEmailLoginListener {
@@ -236,7 +234,7 @@ public class LoginActivity extends BaseActivity {
         @Override
         public void onLoginFailed() {
             hideLoadingProgress();
-            toast("Login failed");
+            Snackbar.make(mVsLoginViewContainer, "Login failed", Snackbar.LENGTH_LONG).show();
         }
 
         @Override

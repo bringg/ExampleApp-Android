@@ -12,14 +12,14 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 
+import com.bringg.exampleapp.activity.BaseActivity;
+
 import java.util.Arrays;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import driver_sdk.BringgSDKBuilder;
 import driver_sdk.LeanBringgSDKClient;
 import driver_sdk.PermissionVerifier;
 import driver_sdk.providers.NotificationProvider;
-import driver_sdk.shift.ShiftEventsListener;
 import driver_sdk.tasks.TaskEventListener;
 
 public class BringgProvider {
@@ -29,18 +29,15 @@ public class BringgProvider {
 
     private final Context mContext;
     private LeanBringgSDKClient mLeanBringgSDKClient;
-    private CopyOnWriteArraySet<ShiftEventsListener> mShiftListeners;
 
     private UIController mUIController;
 
 
     public BringgProvider(Context context) {
-
-        mShiftListeners = new CopyOnWriteArraySet<>();
         mContext = context.getApplicationContext();
         mUIController = new UIController();
         mLeanBringgSDKClient = new BringgSDKBuilder(mContext.getApplicationContext(), new NotificationProviderImpl())
-                .setShiftEventsListener(new ShiftEventsListenerImpl()).setPermissionVerifier(new PermissionVerifierImpl())
+                .setPermissionVerifier(new PermissionVerifierImpl())
                 .build();
     }
 
@@ -54,19 +51,6 @@ public class BringgProvider {
 
     public void removeTaskListener(TaskEventListener listener) {
         mLeanBringgSDKClient.taskEvents().unRegisterTaskEventListener(listener);
-    }
-
-    public void addShiftListener(ShiftEventsListener listener) {
-        mShiftListeners.add(listener);
-    }
-
-    public void removeShiftListener(ShiftEventsListener listener) {
-        mShiftListeners.remove(listener);
-    }
-
-    private void notifyShiftEnded(long shiftId, String deviceId) {
-        for (ShiftEventsListener shiftEventsListener : mShiftListeners)
-            shiftEventsListener.onShiftEnded(shiftId, deviceId);
     }
 
     public UIController getUIController() {
@@ -108,15 +92,13 @@ public class BringgProvider {
 
         String channelId = "channel-01";
         String channelName = "Channel Name";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
         NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = new NotificationChannel(
-                    channelId, channelName, importance);
-            notificationManager.createNotificationChannel(mChannel);
+        if (notificationManager != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+            notificationManager.createNotificationChannel(channel);
         }
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, channelId)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, channelId)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(mContext.getResources().getString(R.string.notification_in_shift_title))
                 .setContentText(mContext.getResources().getString(R.string.notification_in_shift_message));
@@ -129,16 +111,8 @@ public class BringgProvider {
                 0,
                 PendingIntent.FLAG_UPDATE_CURRENT
         );
-        mBuilder.setContentIntent(resultPendingIntent);
+        builder.setContentIntent(resultPendingIntent);
 
-        return mBuilder.build();
-
-    }
-
-    private class ShiftEventsListenerImpl implements ShiftEventsListener {
-        @Override
-        public void onShiftEnded(long shiftId, @NonNull String deviceId) {
-            notifyShiftEnded(shiftId, deviceId);
-        }
+        return builder.build();
     }
 }

@@ -1,6 +1,6 @@
 package com.bringg.exampleapp;
 
-import android.app.Activity;
+import com.bringg.exampleapp.activity.BaseActivity;
 
 public class UIController {
     private BaseActivity currentActivity;
@@ -14,6 +14,6 @@ public class UIController {
     }
 
     public boolean isForeground() {
-        return currentActivity != null && currentActivity.isFroeground();
+        return currentActivity != null && currentActivity.isForeground();
     }
 }

@@ -3,7 +3,9 @@ package com.bringg.exampleapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
@@ -12,25 +14,23 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
 import com.bringg.exampleapp.adapters.TasksAdapter;
 import com.bringg.exampleapp.login.LoginActivity;
-import com.bringg.exampleapp.shifts.ShiftHelper;
-import com.bringg.exampleapp.shifts.ShiftHelperActivity;
 import com.bringg.exampleapp.tasks.TaskActivity;
 import com.bringg.exampleapp.utils.CircleTransform;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import driver_sdk.BringgSDKClient;
-import driver_sdk.models.CancellationReason;
 import driver_sdk.models.Task;
 import driver_sdk.models.User;
 import driver_sdk.tasks.GetTasksResultCallback;
@@ -39,7 +39,7 @@ import driver_sdk.tasks.RefreshTasksResultCallback;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class MainActivity extends ShiftHelperActivity {
+public class MainActivity extends ShiftStateAwareActivity {
 
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
     private DrawerLayout mDrawerLayout;
@@ -52,31 +52,218 @@ public class MainActivity extends ShiftHelperActivity {
     private TasksAdapter mTasksAdapter;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View mTvListEmpty;
-    private TasksResultCallbackImpl mTasksResultCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mTvListEmpty = findViewById(R.id.tv_empty_list_task);
-        mTvListEmpty.setVisibility(View.GONE);
+
         initActionBar();
         initDrawer();
         initRecycleView();
-        initSwipeRefresItem();
+        initSwipeRefreshItem();
+
+        // we may start when already logged in if the user already logged in on a previous session
+        // when not logged in we will start LoginActivity, otherwise we can proceed showing the task list
         if (!isLoggedIn()) {
             startLoginActivityForResult();
         } else {
-            onUserLogin();
+            onUserLoginStateChanged();
         }
+
+        // we may start when the user is already on shift or off shift
+        // update the UI with current shift state
+        onShiftStateChanged(isOnShift());
+    }
+
+    private void startLoginActivityForResult() {
+        startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN_ACTIVITY);
+    }
+
+    /**
+     * update the UI with current user details
+     */
+    private void onUserLoginStateChanged() {
+
+        // get the user details from the sdk
+        User user = BringgSDKClient.getInstance().user().getCurrentUser();
+
+        // user will be null when we are not logged in
+        if (user == null) {
+            // we need to clear current UI from a previous logged in user data that we might had
+            mTvUserName.setText(null);
+            mImgUser.setImageDrawable(null);
+            setTaskListLocally(null);
+            return;
+        }
+
+        // update the UI with current user data
+        mTvUserName.setText(user.getName());
+        String img = user.getImageUrl();
+        if (!TextUtils.isEmpty(img)) {
+            if (!img.contains("http"))
+                img = BASE_HOST + img;
+            Picasso.get().load(img).transform(new CircleTransform()).into(mImgUser);
+        }
+
+        // update the UI with current user task list
+        updateTaskList();
+    }
+
+    void updateTaskList() {
+        if (isDestroyed())
+            return;
+
+        // this gets the current task list
+        // the sdk will return a cached version if exists and up-to-date and will fetch the list from remote otherwise
+        // to explicitly refresh the list from the server use BringgSDKClient.getInstance().taskActions().refreshTasks()
+        BringgSDKClient.getInstance().taskActions().getTasks(new GetTasksResultCallback() {
+            @Override
+            public void onTasksResult(@NonNull List<Task> tasks, long lastTimeUpdated) {
+                setTaskListLocally(tasks);
+            }
+        });
+    }
+
+    private void setTaskListLocally(@Nullable List<Task> tasks) {
+        hideLoadingProgress();
+        mSwipeRefreshLayout.setRefreshing(false);
+
+        mTasks.clear();
+        if (tasks != null) {
+            mTasks.addAll(tasks);
+        }
+
+        if (mTasks.isEmpty()) {
+            mRecycleView.setVisibility(View.GONE);
+            mTvListEmpty.setVisibility(View.VISIBLE);
+        } else {
+            mTvListEmpty.setVisibility(View.GONE);
+            mRecycleView.setVisibility(View.VISIBLE);
+        }
+
+        mTasksAdapter.notifyDataSetChanged();
+    }
+
+
+    /**
+     * current user log out, immediately start the LoginActivity to enable user switching
+     */
+    private void logOut() {
+        // user pressed logout - update the UI
+        onUserLoginStateChanged();
+        // call sdk to logout current user
+        BringgSDKClient.getInstance().loginActions().logout();
+        // auto-start LoginActivity for a new login
+        startLoginActivityForResult();
+    }
+
+    /**
+     * called from ShiftAwareActivity when shift state changes
+     * here we update our UI state accordingly
+     *
+     * @param isOnShift the updated current shift state
+     */
+    @Override
+    protected void onShiftStateChanged(boolean isOnShift) {
+        hideLoadingProgress();
+        mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(isOnShift);
+        mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(!isOnShift);
+    }
+
+    /**
+     * called from:
+     * 1. ShiftAwareActivity when shift state change request generated an error.
+     * 2. Refresh task list by swipe to refresh generated an error.
+     * we display a snackbar with the message just for debugging purposes here,
+     * implementations should probably notify the user and give UI to retry or solve the issue (check connection state, etc.)
+     *
+     * @param message error message text
+     */
+    @Override
+    protected void showResponseError(@NonNull String message) {
+        hideLoadingProgress();
+        Snackbar.make(mTvListEmpty, message, Snackbar.LENGTH_LONG).show();
+    }
+
+    /**
+     * here we handle the result from LoginActivity
+     * 1. we update the UI anyway (delete previous user details from the UI if we had one)
+     * 2. if we are not logged in yet (user canceled, etc.) we show a retry UI
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQUEST_CODE_LOGIN_ACTIVITY:
+                onUserLoginStateChanged();
+                if (!BringgSDKClient.getInstance().loginState().isLoggedIn()) {
+                    Snackbar.make(mTvListEmpty, "Login failed", Snackbar.LENGTH_LONG).setAction("Retry", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            startLoginActivityForResult();
+                        }
+                    }).show();
+                }
+                break;
+        }
+    }
+
+    private void initSwipeRefreshItem() {
+        mSwipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mSwipeRefreshLayout.setRefreshing(true);
+                showLoadingProgress();
+                mTvListEmpty.setVisibility(View.GONE);
+                mTasks.clear();
+
+                // this call explicitly fetch the tasks from the server and refreshes the local task list
+                // we can listen to the specific call result using the callback
+                // we can ignore the callback results and use global TaskEventListener implementation
+                BringgSDKClient.getInstance().taskActions().refreshTasks(new RefreshTasksResultCallback() {
+
+                    @Override
+                    public void onRefreshTasksSuccess(@NonNull OpenTasksResult openTasksResult) {
+
+                        // get the task list from the result
+                        List<Task> tasks = openTasksResult.getTasks();
+                        // tasks may be null - we may only get pending tasks data
+                        int taskListSize = tasks == null ? 0 : tasks.size();
+
+                        // we may also get the different pending task counts from the result
+                        /*
+                        PendingTasksData pendingTasksData = openTasksResult.getPendingTasksData();
+                        if (pendingTasksData != null) {
+                            int beingPrepared = pendingTasksData.getBeingPrepared();
+                            int driversInQueue = pendingTasksData.getDriversInQueue();
+                            int ready = pendingTasksData.getReady();
+                        }
+                        */
+                        Log.i(TAG, "task list refreshed from remote, new tasks count=" + taskListSize);
+
+                        setTaskListLocally(tasks);
+                    }
+
+                    @Override
+                    public void onRefreshTasksFailure(int error) {
+                        Log.e(TAG, "task list refresh failed, errorCode=" + error);
+                        showResponseError("task list refresh failed");
+                    }
+                });
+            }
+        });
     }
 
     private void initActionBar() {
         mToolBar = findViewById(R.id.toolbar);
         setSupportActionBar(mToolBar);
         ActionBar actionbar = getSupportActionBar();
-        actionbar.setDisplayHomeAsUpEnabled(true);
-        actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp);
+        if (actionbar != null) {
+            actionbar.setDisplayHomeAsUpEnabled(true);
+            actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp);
+        }
     }
 
     private void initDrawer() {
@@ -87,19 +274,20 @@ public class MainActivity extends ShiftHelperActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.nav_end_shift:
+                        endShift();
+                        break;
                     case R.id.nav_start_shift:
-                        toggleShift();
+                        startShift();
                         break;
                     case R.id.nav_change_account:
                         logOut();
                         break;
                 }
-                menuItem.setChecked(true);
                 mDrawerLayout.closeDrawers();
                 return true;
             }
         });
-        ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolBar, R.string.drawer_open, R.string.drawer_close) {
+        ActionBarDrawerToggle drawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolBar, R.string.drawer_open, R.string.drawer_close) {
             public void onDrawerOpened(View drawerView) {
                 invalidateOptionsMenu();
             }
@@ -108,122 +296,16 @@ public class MainActivity extends ShiftHelperActivity {
                 invalidateOptionsMenu();
             }
         };
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mDrawerLayout.addDrawerListener(drawerToggle);
         mImgUser = mNavigationView.getHeaderView(0).findViewById(R.id.nav_img_account);
         mTvUserName = mNavigationView.getHeaderView(0).findViewById(R.id.nav_tv_header);
     }
 
-    private void startLoginActivityForResult() {
-        startActivityForResult(new Intent(this, LoginActivity.class), REQUEST_CODE_LOGIN_ACTIVITY);
-    }
-
-    @Override
-    protected void notifyShiftStateChanged(ShiftHelper.ShiftState state) {
-        switch (state) {
-
-            case SHIFT_ON:
-                hideLoadingProgress();
-                mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(true);
-                mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(false);
-                break;
-            case SHIFT_OFF:
-                hideLoadingProgress();
-                mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(false);
-                mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(true);
-                break;
-        }
-    }
-
-    private void initSwipeRefresItem() {
-        mTasksResultCallback = new TasksResultCallbackImpl();
-        mSwipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refreshItems();
-            }
-        });
-    }
-
-    private void refreshItems() {
-        mSwipeRefreshLayout.setRefreshing(true);
-        showLoadingProgress();
-        mTvListEmpty.setVisibility(View.GONE);
-        mTasks.clear();
-        //mTasksAdapter.notifyDataSetChanged();
-        mBringgProvider.getClient().taskActions().refreshTasks(mTasksResultCallback);
-
-    }
-
-    private void onUserLogin() {
-        getUser();
-        getShiftStateFromRemote();
-        refreshItems();
-    }
-
-    private void getUser() {
-        User user = mBringgProvider.getClient().user().getCurrentUser();
-        if (user == null)
-            return;
-        mTvUserName.setText(user.getName());
-        String img = user.getImageUrl();
-        if (!TextUtils.isEmpty(img)) {
-            if (!img.contains("http"))
-                img = BASE_HOST + img;
-            Picasso.get().load(img).transform(new CircleTransform()).into(mImgUser);
-        }
-    }
-
-    @Override
-    public void onTasksLoaded(@NonNull Collection<driver_sdk.models.Task> tasks) {
-        super.onTasksLoaded(tasks);
-        mTasksResultCallback.onTaskResult(new ArrayList<>(tasks));
-    }
-
-    @Override
-    public void onTasksUpdated(@NonNull Collection<driver_sdk.models.Task> collection) {
-        super.onTasksUpdated(collection);
-        mTasksResultCallback.onTaskResult(new ArrayList<>(collection));
-    }
-
-    @Override
-    public void onTaskRemoved(long taskId) {
-        super.onTaskRemoved(taskId);
-        mTasks.remove(getLocalTaskById(taskId));
-        notifyDataSetChanged();
-        if (mTasks.isEmpty())
-            mTvListEmpty.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void onTaskCanceled(long taskId, @NonNull String s, @NonNull CancellationReason cancellationReason) {
-        super.onTaskCanceled(taskId, s, cancellationReason);
-        toast("Task canceled " + s + " " + cancellationReason.getReason());
-        onTaskRemoved(taskId);
-    }
-
-    private driver_sdk.models.Task getLocalTaskById(long taskId) {
-        for (Task task : mTasks) {
-            if (taskId == task.getId())
-                return task;
-        }
-        return null;
-    }
-
-    @Override
-    public void onTaskAdded(@NonNull Task task) {
-        if (mTvListEmpty.getVisibility() == View.VISIBLE)
-            mTvListEmpty.setVisibility(View.GONE);
-        super.onTaskAdded(task);
-        mTasks.add(task);
-        mTasksAdapter.notifyItemRangeInserted(mTasks.size() - 1, 1);
-    }
-
-    private void notifyDataSetChanged() {
-        mTasksAdapter.notifyDataSetChanged();
-    }
-
     private void initRecycleView() {
+
+        mTvListEmpty = findViewById(R.id.tv_empty_list_task);
+        mTvListEmpty.setVisibility(View.GONE);
+
         mRecycleView = findViewById(R.id.recycle_view);
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setOrientation(LinearLayoutManager.VERTICAL);
@@ -233,70 +315,10 @@ public class MainActivity extends ShiftHelperActivity {
         mRecycleView.setAdapter(mTasksAdapter);
     }
 
-    private void logOut() {
-        mBringgProvider.getClient().loginActions().logout();
-        startLoginActivityForResult();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_CODE_LOGIN_ACTIVITY:
-                if (BringgSDKClient.getInstance().loginState().isLoggedIn()) {
-                    onUserLogin();
-                } else {
-                    finish();
-                }
-                break;
-        }
-    }
-
-
     private class TasksAdapterListenerImpl implements TasksAdapter.TasksAdapterListener {
-
         @Override
         public void onItemSelected(long taskId) {
             startActivity(TaskActivity.getIntent(MainActivity.this, taskId));
-        }
-    }
-
-    private class TasksResultCallbackImpl implements GetTasksResultCallback, RefreshTasksResultCallback {
-
-        void onTaskResult(List<Task> tasks) {
-            if (isDestroyed())
-                return;
-            hideLoadingProgress();
-            if (tasks.isEmpty()) {
-                mRecycleView.setVisibility(View.GONE);
-                mTvListEmpty.setVisibility(View.VISIBLE);
-            } else {
-                mTvListEmpty.setVisibility(View.GONE);
-                mRecycleView.setVisibility(View.VISIBLE);
-            }
-            mSwipeRefreshLayout.setRefreshing(false);
-            mTasks.clear();
-            mTasksAdapter.notifyDataSetChanged();
-            mTasks.addAll(tasks);
-            mTasksAdapter.notifyDataSetChanged();
-        }
-
-        @Override
-        public void onTasksResult(@NonNull List<Task> tasks, long lastTimeUpdated) {
-            onTaskResult(tasks);
-        }
-
-        @Override
-        public void onRefreshTasksFailure(int error) {
-            if (isFinishing())
-                return;
-            hideLoadingProgress();
-            toast("error");
-        }
-
-        @Override
-        public void onRefreshTasksSuccess(@NonNull OpenTasksResult openTasksResult) {
-            onTaskResult(openTasksResult.getTasks());
         }
     }
 }

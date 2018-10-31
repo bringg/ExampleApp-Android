@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -15,16 +17,16 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.bringg.exampleapp.R;
-import com.bringg.exampleapp.shifts.ShiftHelper;
-import com.bringg.exampleapp.shifts.ShiftHelperActivity;
+import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import driver_sdk.BringgSDKClient;
 import driver_sdk.models.Task;
 import driver_sdk.models.Waypoint;
 
-public class TaskActivity extends ShiftHelperActivity implements TaskListener {
+public class TaskActivity extends ShiftStateAwareActivity implements TaskListener {
 
     private static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
 
@@ -50,7 +52,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
         long taskId = getIntent().getLongExtra(EXTRA_TASK_ID, 0);
         if (taskId == 0)
             finish();
-        mTask = mBringgProvider.getClient().taskActions().getTaskById(taskId);
+        mTask = BringgSDKClient.getInstance().taskActions().getTaskById(taskId);
         initActionBar();
         findViews();
         initViews();
@@ -71,13 +73,6 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
         actionbar.setDisplayHomeAsUpEnabled(true);
         actionbar.setHomeAsUpIndicator(R.drawable.baseline_arrow_back_white_24dp);
         getSupportActionBar().setTitle(mTask.getTitle());
-    }
-
-    @Override
-    protected void notifyShiftStateChanged(ShiftHelper.ShiftState state) {
-        if (state == ShiftHelper.ShiftState.SHIFT_ON) {
-
-        }
     }
 
     private void updateView(TaskHelper.TaskState taskState) {
@@ -107,7 +102,11 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
     }
 
     private void startTask() {
-        if (isInShift() && isTaskAccepted())
+        if (!isOnShift()) {
+            showDialogNotInShift();
+            return;
+        }
+        if (isTaskAccepted())
             mTaskHelper.startTask();
     }
 
@@ -119,16 +118,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
         return true;
     }
 
-    private boolean isInShift() {
-        if (getShiftState() == ShiftHelper.ShiftState.SHIFT_OFF) {
-            showDialogNotInShift();
-            return false;
-        }
-        return true;
-    }
-
     private void initViewPager() {
-
         mAdapterViewPager = new MyPagerAdapter(getSupportFragmentManager(), mListFragments = createFragments());
         mViewPager.setAdapter(mAdapterViewPager);
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -168,7 +158,8 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
                 setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        toggleShift();
+                        startShift();
+                        dialog.dismiss();
                     }
                 }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
             @Override
@@ -186,6 +177,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         mTaskHelper.acceptTask();
+                        dialog.dismiss();
                     }
                 }).setNegativeButton(R.string.no_now, new DialogInterface.OnClickListener() {
             @Override
@@ -196,7 +188,7 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
     }
 
     private void findViews() {
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+        mViewPager = findViewById(R.id.viewpager);
         mBtnStartTask = findViewById(R.id.btn_way_point_action);
     }
 
@@ -213,16 +205,19 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
 
     @Override
     public void actionWayPoint(long wayPointId) {
-        if (isInShift())
-            mTaskHelper.actionWayPoint(wayPointId);
+        if (!isOnShift()) {
+            showDialogNotInShift();
+            return;
+        }
+        mTaskHelper.actionWayPoint(wayPointId);
     }
 
-    @Override
-    public void onTaskRemoved(long l) {
-        super.onTaskRemoved(l);
-        if (l == getTaskId())
-            onBackPressed();
-    }
+//    @Override
+//    public void onTaskRemoved(long l) {
+//        super.onTaskRemoved(l);
+//        if (l == getTaskId())
+//            onBackPressed();
+//    }
 
     @Override
     public TaskHelper.TaskState getTaskState() {
@@ -239,6 +234,16 @@ public class TaskActivity extends ShiftHelperActivity implements TaskListener {
         if (mTask == null)
             return null;
         return mTask.getWayPointById(wayPointId);
+    }
+
+    @Override
+    protected void onShiftStateChanged(boolean isOnShift) {
+
+    }
+
+    @Override
+    protected void showResponseError(@NonNull String message) {
+        Snackbar.make(mViewPager, message, Snackbar.LENGTH_LONG).show();
     }
 
     //****************************************//

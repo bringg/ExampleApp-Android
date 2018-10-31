@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ExampleApp</string>
+    <string name="app_name">Bringg Example Driver App</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="phone_number">Phone number</string>
@@ -10,7 +10,7 @@
     <string name="password_empty_message">Please insert password</string>
     <string name="phone_number_not_valid">Phone number not valid</string>
     <string name="sms_empty_message">Sms code cannot be empty</string>
-    <string name="loading_wait">Loading. Please wait...</string>
+    <string name="loading_wait">Loading. Please wait…</string>
     <string name="cancel">Cancel</string>
     <string name="choose_company">Choose company</string>
     <string name="sms_code">sms code</string>

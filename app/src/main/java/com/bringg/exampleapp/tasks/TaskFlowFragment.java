@@ -3,9 +3,13 @@ package com.bringg.exampleapp.tasks;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+import java.util.Set;
 
 import driver_sdk.BringgSDKClient;
 import driver_sdk.content.WaypointActionUtil;
+import driver_sdk.models.configuration.TaskActionItem;
 import driver_sdk.models.tasks.flow.ProceedTaskCallback;
 import driver_sdk.models.tasks.flow.TaskFlow;
 
@@ -30,8 +34,8 @@ public class TaskFlowFragment extends WaypointFragmentBase implements ProceedTas
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         mTaskFlow = BringgSDKClient.getInstance().taskActions().getTaskFlow(mTask.getId());
     }
 
@@ -52,7 +56,7 @@ public class TaskFlowFragment extends WaypointFragmentBase implements ProceedTas
 
     @Override
     protected void handleWaypointAction(@NonNull Context context) {
-        mTaskFlow.proceedToNextTaskStep(TaskFlowFragment.this, mTask, mWaypoint.getId());
+        mTaskFlow.proceedToNextTaskStep(this, mTask, mWaypoint.getId());
     }
 
     @Override
@@ -94,5 +98,10 @@ public class TaskFlowFragment extends WaypointFragmentBase implements ProceedTas
     @Override
     public void onShiftNotActiveError(@NonNull String message) {
         showDialogNotInShift();
+    }
+
+    @Override
+    public void onMandatoryActionsNotCompleted(@NonNull Set<TaskActionItem> mandatoryRulesSet) {
+        showMandatoryActionsNotCompleted(mandatoryRulesSet);
     }
 }

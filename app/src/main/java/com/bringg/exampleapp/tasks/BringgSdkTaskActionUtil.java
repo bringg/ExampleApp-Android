@@ -266,10 +266,8 @@ class BringgSdkTaskActionUtil {
      * @param phone   customer phone number from waypoint.getPhone()
      */
     public static void contactMessage(@NonNull Context context, @NonNull String phone) {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setType("vnd.android-dir/mms-sms");
-        intent.putExtra("address", phone);
-        intent.putExtra("sms_body", "message");
+        Uri uri = Uri.parse("smsto:" + phone);
+        Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
         context.startActivity(intent);
     }
 

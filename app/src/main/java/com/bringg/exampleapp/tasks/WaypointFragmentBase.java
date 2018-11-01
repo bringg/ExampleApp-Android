@@ -22,11 +22,14 @@ import com.bringg.exampleapp.utils.CircleTransform;
 import com.bringg.exampleapp.utils.Utils;
 import com.squareup.picasso.Picasso;
 
+import java.util.Set;
+
 import driver_sdk.BringgSDKClient;
 import driver_sdk.models.Task;
 import driver_sdk.models.TaskState;
 import driver_sdk.models.WayPointState;
 import driver_sdk.models.Waypoint;
+import driver_sdk.models.configuration.TaskActionItem;
 import driver_sdk.shift.StartShiftResultCallback;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
@@ -242,6 +245,26 @@ public abstract class WaypointFragmentBase extends Fragment {
                 dialog.dismiss();
             }
         }).show();
+    }
+
+    public void showMandatoryActionsNotCompleted(Set<TaskActionItem> mandatoryRulesSet) {
+        Context context = getContext();
+        if (context == null) return;
+
+        StringBuilder stringBuilder = new StringBuilder();
+        for (TaskActionItem taskActionItem : mandatoryRulesSet) {
+            stringBuilder.append('\n').append(taskActionItem.getTitle());
+        }
+
+        new AlertDialog.Builder(context).
+                setTitle(R.string.incomplete_mandatory_actions).
+                setMessage(stringBuilder).
+                setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).show();
     }
 
     public void onError(int errorCode, @NonNull String message) {

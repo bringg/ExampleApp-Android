@@ -33,7 +33,6 @@ import java.util.List;
 
 import driver_sdk.BringgSDKClient;
 import driver_sdk.models.CancellationReason;
-import driver_sdk.models.NoteData;
 import driver_sdk.models.Task;
 import driver_sdk.models.User;
 import driver_sdk.models.Waypoint;
@@ -230,9 +229,6 @@ public class MainActivity extends ShiftStateAwareActivity implements TaskEventLi
             @Override
             public void onRefresh() {
                 mSwipeRefreshLayout.setRefreshing(true);
-                showLoadingProgress();
-                mTvListEmpty.setVisibility(View.GONE);
-                mTasks.clear();
 
                 // this call explicitly fetch the tasks from the server and refreshes the local task list
                 // we can listen to the specific call result using the callback

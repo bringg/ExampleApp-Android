@@ -23,45 +23,32 @@ import com.bringg.exampleapp.utils.Utils;
 import com.squareup.picasso.Picasso;
 
 import driver_sdk.BringgSDKClient;
-import driver_sdk.content.WaypointActionUtil;
 import driver_sdk.models.Task;
 import driver_sdk.models.TaskState;
 import driver_sdk.models.WayPointState;
 import driver_sdk.models.Waypoint;
-import driver_sdk.models.tasks.flow.ProceedTaskCallback;
-import driver_sdk.models.tasks.flow.TaskFlow;
 import driver_sdk.shift.StartShiftResultCallback;
 
 import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
 
-public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallback {
+public abstract class WaypointFragmentBase extends Fragment {
 
-    private static final String TAG = "SimpleTaskFlowFragment";
-    private static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
-    private static final String EXTRA_WAY_POINT_ID = "com.bringg.exampleapp.tasks.EXTRA_WAY_POINT_ID";
+    protected static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
+    protected static final String EXTRA_WAY_POINT_ID = "com.bringg.exampleapp.tasks.EXTRA_WAY_POINT_ID";
+    private static final String TAG = "WaypointFragmentBase";
     @NonNull
     protected Task mTask;
     @NonNull
     protected Waypoint mWaypoint;
     @Nullable
     protected InteractionCallback mInteractionCallback;
+    protected Button mBtnAction;
     private TextView mTvAddress;
     private TextView mTvScheduledFor;
     private TextView mTvUserName;
     private ImageView mImgProfile;
     private View mBtnContactPhone;
     private View mBtnContactMessage;
-    private Button mBtnAction;
-    private TaskFlow mSimpleTaskFlow;
-
-    public static SimpleTaskFlowFragment newInstance(long taskId, long wayPointId) {
-        Bundle args = new Bundle();
-        SimpleTaskFlowFragment fragment = new SimpleTaskFlowFragment();
-        args.putLong(EXTRA_TASK_ID, taskId);
-        args.putLong(EXTRA_WAY_POINT_ID, wayPointId);
-        fragment.setArguments(args);
-        return fragment;
-    }
 
     @Override
     public void onAttach(Context context) {
@@ -69,7 +56,6 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
         if (context instanceof InteractionCallback) {
             mInteractionCallback = (InteractionCallback) context;
         }
-        mSimpleTaskFlow = BringgSDKClient.getInstance().taskActions().getSimpleTaskFlow();
     }
 
     @Override
@@ -128,26 +114,26 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
         mTvAddress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                WaypointActionUtil.navigate(view.getContext(), mWaypoint);
+                handleNavigateToWaypointDestination(view.getContext());
             }
         });
 
         mBtnContactPhone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                WaypointActionUtil.makeCall(view.getContext(), mWaypoint);
+                handleCallCustomer(view.getContext());
             }
         });
         mBtnContactMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                WaypointActionUtil.contactMessage(view.getContext(), mWaypoint);
+                handleContactCustomerBySms(view.getContext());
             }
         });
         mBtnAction.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mSimpleTaskFlow.proceedToNextTaskStep(SimpleTaskFlowFragment.this, mTask, mWaypoint.getId());
+                handleWaypointAction(view.getContext());
             }
         });
 
@@ -163,6 +149,14 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
 
         updateViews();
     }
+
+    protected abstract void handleNavigateToWaypointDestination(@NonNull Context context);
+
+    protected abstract void handleCallCustomer(@NonNull Context context);
+
+    protected abstract void handleContactCustomerBySms(@NonNull Context context);
+
+    protected abstract void handleWaypointAction(@NonNull Context context);
 
     private void updateViewsByTaskState(TaskState taskState) {
         switch (taskState) {
@@ -202,7 +196,7 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
     }
 
     // use Bringg SDK to start shift
-    private void startShift() {
+    protected void startShift() {
         BringgSDKClient.getInstance().shiftActions().startShiftAndWaitForApproval(true, new StartShiftResultCallback() {
             @Override
             public void onShiftStarted() {
@@ -216,7 +210,6 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
         });
     }
 
-    // -------------------------------------- presenter implementation -------------------------------------/
     public void updateViews() {
         if (!isAdded())
             return;
@@ -251,54 +244,10 @@ public class SimpleTaskFlowFragment extends Fragment implements ProceedTaskCallb
         }).show();
     }
 
-    @Override
-    public void onTaskDone(long taskId) {
-        if (mInteractionCallback != null) {
-            mInteractionCallback.onTaskDone(taskId);
-        }
-    }
-
-    @Override
-    public void onNextWaypointStarted(long nextWayPointId) {
-        if (mInteractionCallback != null) {
-            mInteractionCallback.onNextWaypointStarted(nextWayPointId);
-        }
-    }
-
-    @Override
-    public void onWaypointDone(long wayPointId) {
-        if (mInteractionCallback != null) {
-            mInteractionCallback.onWaypointDone(wayPointId);
-        }
-    }
-
-    @Override
-    public void onError(int errorCode, String message) {
+    public void onError(int errorCode, @NonNull String message) {
         Log.e(TAG, "got error from progress callback, errorCode=" + errorCode + ", message=" + message);
         Snackbar.make(mBtnAction, message, Snackbar.LENGTH_LONG).show();
     }
-
-    @Override
-    public void onArrivedToWaypoint(long taskId, long wayPointId) {
-        updateViews();
-    }
-
-    @Override
-    public void onTaskStarted(long taskId) {
-        updateViews();
-    }
-
-    @Override
-    public void onTaskAccepted(long taskId) {
-        updateViews();
-    }
-
-    @Override
-    public void onShiftNotActiveError(@NonNull String message) {
-        showDialogNotInShift();
-    }
-    // ---------------------------------------------------------------------------------------------------------------/
-
 
     /**
      * this interface is used to update the UI when waypoint/task state is changed

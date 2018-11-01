@@ -30,6 +30,10 @@ import driver_sdk.tasks.TaskActionCallback;
 class BringgSdkTaskActionUtil {
 
 
+    private static final int ERROR_NOT_IMPLEMENTED = 1000;
+    private static final int ERROR_TASK_IS_FUTURE = 1001;
+    private static final int ERROR_CAN_NOT_START_TASK = 1002;
+
     /**
      * Proceed to the next step in task lifecycle: Start -> Arrived to waypoint -> Left waypoint
      * Single task may have one or more waypoints
@@ -62,7 +66,7 @@ class BringgSdkTaskActionUtil {
             case STARTED_AND_NOT_ON_SITE:
                 handleWaypointState(waypointPresenter, currentWayPointState, taskId, wayPointId);
             default:
-                waypointPresenter.showError("Waypoint state not yet implemented on this demo app, state=" + currentWayPointState);
+                waypointPresenter.onError(ERROR_NOT_IMPLEMENTED, "Waypoint state not yet implemented on this demo app, state=" + currentWayPointState);
                 break;
         }
 
@@ -85,14 +89,14 @@ class BringgSdkTaskActionUtil {
                 waypointPresenter.handleTaskDone(taskId);
                 return;
             case FUTURE:
-                waypointPresenter.showError("This is a future task, it is not available to start yet.");
+                waypointPresenter.onError(ERROR_TASK_IS_FUTURE, "This is a future task, it is not available to start yet.");
                 break;
             case STARTED:
             case STARTED_AND_CURRENT_WAYPOINT_ON_SITE:
                 handleWaypointState(waypointPresenter, currentWayPointState, taskId, wayPointId);
                 break;
             default:
-                waypointPresenter.showError("Task state not yet implemented on this demo app, state=" + currentTaskState);
+                waypointPresenter.onError(ERROR_NOT_IMPLEMENTED, "Task state not yet implemented on this demo app, state=" + currentTaskState);
                 break;
         }
     }
@@ -115,7 +119,7 @@ class BringgSdkTaskActionUtil {
 
                     @Override
                     public void onActionFailed(int errorCode) {
-                        waypointPresenter.showError("ArriveToWayPoint failed, errorCode=" + errorCode);
+                        waypointPresenter.onError(errorCode, "ArriveToWayPoint failed, errorCode=" + errorCode);
                     }
                 });
                 break;
@@ -137,7 +141,7 @@ class BringgSdkTaskActionUtil {
 
                     @Override
                     public void onActionFailed(int errorCode) {
-                        waypointPresenter.showError("LeaveWayPoint failed, errorCode=" + errorCode);
+                        waypointPresenter.onError(errorCode, "LeaveWayPoint failed, errorCode=" + errorCode);
                     }
                 });
                 break;
@@ -167,15 +171,15 @@ class BringgSdkTaskActionUtil {
                         break;
                     case FAILED_BLOCKED_BY_TASK_WITH_HIGHER_PRIORITY:
                         // user can't start this task, user should start higher priority task first
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case FAILED_TASK_WITH_HIGHER_PRIORITY_FOUND:
                         // there is a task with higher priority, implementation should decide whether to ignore this state and start the task anyway/notify the user/block starting
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case FAILED_IS_LINKED_TASK_AND_PREVIOUS_NOT_COMPLETED:
                         // user can't start this task, user should complete the previous linked task first
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case TASK_NOT_ACCEPTED:
                         // this task was not accepted by the user, show accept UI so the user can accept it
@@ -183,11 +187,11 @@ class BringgSdkTaskActionUtil {
                         break;
                     case FAILED_EARLY_FOR_START_TASK:
                         // the user is too early for starting this task, implementation should show a message with the task time window to the user
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case FAILED_IS_FUTURE:
                         // this task is planned for the future and can't be started
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case FAILED_NO_ACTIVE_SHIFT:
                         // shift state is currently off, show start shift UI
@@ -195,11 +199,11 @@ class BringgSdkTaskActionUtil {
                         break;
                     case FAILED_TASK_NOT_FOUND_LOCALLY:
                         // task was removed/canceled and can't be found locally
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                     case INTERNAL_START_FAILURE:
                         // internal Bringg SDK error when trying to start the task, shouldn't happen
-                        waypointPresenter.showError("Error starting task, startTaskResult=" + startTaskResult.name());
+                        waypointPresenter.onError(ERROR_CAN_NOT_START_TASK, "Error starting task, startTaskResult=" + startTaskResult.name());
                         break;
                 }
             }
@@ -223,7 +227,7 @@ class BringgSdkTaskActionUtil {
 
             @Override
             public void onActionFailed(int errorCode) {
-                waypointPresenter.showError("Accept task failed, errorCode=" + errorCode);
+                waypointPresenter.onError(errorCode, "Accept task failed, errorCode=" + errorCode);
             }
         });
     }

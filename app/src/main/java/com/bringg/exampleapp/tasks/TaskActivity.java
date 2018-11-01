@@ -1,7 +1,6 @@
 package com.bringg.exampleapp.tasks;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,10 +10,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
-import android.widget.Button;
 
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
@@ -23,22 +19,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import driver_sdk.BringgSDKClient;
-import driver_sdk.content.StartTaskResult;
-import driver_sdk.content.callback.StartTaskCallback;
 import driver_sdk.models.Task;
-import driver_sdk.models.TaskState;
 import driver_sdk.models.Waypoint;
-import driver_sdk.shift.StartShiftResultCallback;
-import driver_sdk.tasks.TaskActionCallback;
 
-public class TaskActivity extends ShiftStateAwareActivity implements WayPointFragment.InteractionCallback {
+public class TaskActivity extends ShiftStateAwareActivity implements WaypointFragmentBase.InteractionCallback {
 
     private static final String EXTRA_TASK_ID = "com.bringg.exampleapp.tasks.EXTRA_TASK_ID";
 
     private Task mTask;
     private ViewPager mViewPager;
     private MyPagerAdapter mAdapterViewPager;
-    private List<WayPointFragment> mListFragments;
 
     public static Intent getIntent(Context context, long taskId) {
         Intent intent = new Intent(context, TaskActivity.class);
@@ -66,10 +56,6 @@ public class TaskActivity extends ShiftStateAwareActivity implements WayPointFra
         initViewPager();
     }
 
-    private void updateCurrentFragment() {
-        mListFragments.get(mViewPager.getCurrentItem()).updateViews();
-    }
-
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
@@ -87,7 +73,7 @@ public class TaskActivity extends ShiftStateAwareActivity implements WayPointFra
 
     private void initViewPager() {
         mViewPager = findViewById(R.id.viewpager);
-        mAdapterViewPager = new MyPagerAdapter(getSupportFragmentManager(), mListFragments = createFragments());
+        mAdapterViewPager = new MyPagerAdapter(getSupportFragmentManager(), createFragments());
         mViewPager.setAdapter(mAdapterViewPager);
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -111,10 +97,10 @@ public class TaskActivity extends ShiftStateAwareActivity implements WayPointFra
         }
     }
 
-    private List<WayPointFragment> createFragments() {
-        List<WayPointFragment> fragments = new ArrayList<>();
+    private List<WaypointFragmentBase> createFragments() {
+        List<WaypointFragmentBase> fragments = new ArrayList<>();
         for (Waypoint waypoint : mTask.getWayPoints()) {
-            fragments.add(WayPointFragment.newInstance(waypoint.getTaskId(), waypoint.getId()));
+            fragments.add(TaskFlowFragment.newInstance(waypoint.getTaskId(), waypoint.getId()));
         }
         return fragments;
     }
@@ -183,9 +169,9 @@ public class TaskActivity extends ShiftStateAwareActivity implements WayPointFra
     //****************************************//
     private class MyPagerAdapter extends FragmentPagerAdapter {
 
-        private final List<WayPointFragment> mFragmentsItems;
+        private final List<WaypointFragmentBase> mFragmentsItems;
 
-        public MyPagerAdapter(FragmentManager fragmentManager, List<WayPointFragment> fragments) {
+        MyPagerAdapter(FragmentManager fragmentManager, List<WaypointFragmentBase> fragments) {
             super(fragmentManager);
             mFragmentsItems = fragments;
         }
@@ -196,7 +182,7 @@ public class TaskActivity extends ShiftStateAwareActivity implements WayPointFra
         }
 
         @Override
-        public WayPointFragment getItem(int position) {
+        public WaypointFragmentBase getItem(int position) {
             return mFragmentsItems.get(position);
         }
 

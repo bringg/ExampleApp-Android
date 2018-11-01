@@ -18,7 +18,8 @@ import driver_sdk.tasks.LeaveWayPointActionCallback;
 import driver_sdk.tasks.TaskActionCallback;
 
 /**
- * This class demonstrates the basic actions that can be made on a task:
+ * This class demonstrates the basic actions that can be made on a task using BringgSDK api
+ * Here you can see how the logic is handled on a fine level.
  * 1. Start task
  * 2. Arrived to a waypoint destination
  * 3. Left waypoint destination
@@ -26,7 +27,7 @@ import driver_sdk.tasks.TaskActionCallback;
  * 5. Call waypoint customer
  * 6. Send waypoint customer a text message
  */
-class WaypointActionUtil {
+class BringgSdkTaskActionUtil {
 
 
     /**

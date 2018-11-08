@@ -59,20 +59,16 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         initActionBar();
         initDrawer();
         initRecycleView();
         initSwipeRefreshItem();
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
         // we may start when already logged in if the user already logged in on a previous session
         // when not logged in we will start LoginActivity, otherwise we can proceed showing the task list
         if (!isLoggedIn()) {
             startLoginActivityForResult();
-            return;
         } else {
             onUserLoginStateChanged();
         }
@@ -114,6 +110,7 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
 
         // update the UI with current user task list
         updateTaskList();
+        onShiftStateChanged(BringgSDKClient.getInstance().shiftState().isOnShift());
     }
 
     void updateTaskList() {
@@ -172,8 +169,9 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
      */
     @Override
     protected void onShiftStateChanged(boolean isOnShift) {
-        mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(isOnShift);
-        mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(!isOnShift);
+        boolean isLoggedIn = BringgSDKClient.getInstance().loginState().isLoggedIn();
+        mNavigationView.getMenu().findItem(R.id.nav_end_shift).setVisible(isLoggedIn && isOnShift);
+        mNavigationView.getMenu().findItem(R.id.nav_start_shift).setVisible(isLoggedIn && !isOnShift);
         if (isOnShift) {
             BringgSDKClient.getInstance().taskEvents().registerTaskEventListener(this);
         } else {

@@ -72,7 +72,6 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
         // when not logged in we will start LoginActivity, otherwise we can proceed showing the task list
         if (!isLoggedIn()) {
             startLoginActivityForResult();
-            finish();
             return;
         } else {
             onUserLoginStateChanged();

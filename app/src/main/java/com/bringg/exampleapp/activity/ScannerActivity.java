@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.utils;
+package com.bringg.exampleapp.activity;
 
 import android.content.Intent;
 import android.os.Bundle;

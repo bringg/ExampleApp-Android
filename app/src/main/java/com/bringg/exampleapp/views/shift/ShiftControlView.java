@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.views;
+package com.bringg.exampleapp.views.shift;
 
 import android.content.Context;
 import android.support.annotation.NonNull;

@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.login;
+package com.bringg.exampleapp.views.login;
 
 import android.content.Context;
 import android.os.Build;
@@ -100,7 +100,7 @@ public class LoginWithPhoneView extends LinearLayout {
         }
     }
 
-    boolean onBackPress() {
+    public boolean onBackPress() {
         if (mState == State.SMS) {
             setState(State.PHONE);
             return true;
@@ -131,7 +131,7 @@ public class LoginWithPhoneView extends LinearLayout {
         Toast.makeText(getContext(), stringId, Toast.LENGTH_SHORT).show();
     }
 
-    interface ViewPhoneLoginListener {
+    public interface ViewPhoneLoginListener {
         void onPhoneNumberInsert(String phone);
 
         void onSmsPasswordInsert(String phone, String sms);

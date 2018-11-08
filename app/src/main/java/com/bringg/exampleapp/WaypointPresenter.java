@@ -1,8 +1,8 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp;
 
 import android.support.annotation.NonNull;
 
-interface WaypointPresenter {
+public interface WaypointPresenter {
 
     void showDialogNotInShift();
 

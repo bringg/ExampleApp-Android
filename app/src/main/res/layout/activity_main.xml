@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".MainActivity">
+    tools:context=".activity.TaskListActivity">
 
     <!-- Layout to contain contents of main body of screen (drawer will slide over this) -->
     <LinearLayout
@@ -48,7 +48,7 @@
 
         <include layout="@layout/divider" />
 
-        <com.bringg.exampleapp.views.ShiftControlView
+        <com.bringg.exampleapp.views.shift.ShiftControlView
             android:id="@+id/shift_control_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />

@@ -1,8 +1,11 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp.fragments.waypoint;
 
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+
+import com.bringg.exampleapp.BringgSdkTaskActionUtil;
+import com.bringg.exampleapp.WaypointPresenter;
 
 public class SelfHandlingWayPointFragment extends WaypointFragmentBase implements WaypointPresenter {
 

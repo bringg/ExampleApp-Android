@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp.fragments.waypoint;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -32,7 +32,7 @@ import driver_sdk.models.Waypoint;
 import driver_sdk.models.configuration.TaskActionItem;
 import driver_sdk.shift.StartShiftResultCallback;
 
-import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
+import static com.bringg.exampleapp.activity.TaskListActivity.BASE_HOST;
 
 public abstract class WaypointFragmentBase extends Fragment {
 

@@ -23,7 +23,7 @@
         tools:replace="android:supportsRtl"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.TaskListActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -32,14 +32,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".utils.ScannerActivity"
+            android:name=".activity.ScannerActivity"
             android:screenOrientation="portrait"/>
         <activity
-            android:name=".login.LoginActivity"
+            android:name=".activity.LoginActivity"
             android:screenOrientation="portrait">
         </activity>
         <activity
-            android:name=".tasks.TaskActivity"
+            android:name=".activity.TaskActivity"
             android:screenOrientation="portrait">
         </activity>
 

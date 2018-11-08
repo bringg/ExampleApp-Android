@@ -13,7 +13,6 @@ import java.util.List;
 
 public class ListItemDialog {
 
-
     private final String mTitle;
     private final List<String> mListItem;
     private final SelectedItemListener mOnSelectedItemListener;

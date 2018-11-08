@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.login;
+package com.bringg.exampleapp.views.login;
 
 import android.content.Context;
 import android.os.Build;
@@ -83,7 +83,7 @@ public class LoginWithEmailView extends LinearLayout {
         return true;
     }
 
-    interface ViewEmailLoginListener {
+    public interface ViewEmailLoginListener {
         void loginWithMail(String mail, String password);
     }
 

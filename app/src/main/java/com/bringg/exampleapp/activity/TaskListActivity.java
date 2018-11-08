@@ -1,4 +1,4 @@
-package com.bringg.exampleapp;
+package com.bringg.exampleapp.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,10 +20,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
+import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.adapters.TasksAdapter;
-import com.bringg.exampleapp.login.LoginActivity;
-import com.bringg.exampleapp.tasks.TaskActivity;
 import com.bringg.exampleapp.utils.CircleTransform;
 import com.squareup.picasso.Picasso;
 
@@ -42,10 +40,9 @@ import driver_sdk.tasks.OpenTasksResult;
 import driver_sdk.tasks.RefreshTasksResultCallback;
 import driver_sdk.tasks.TaskEventListener;
 
-import static com.bringg.exampleapp.BringgProvider.BASE_HOST;
+public class TaskListActivity extends ShiftStateAwareActivity implements TaskEventListener {
 
-public class MainActivity extends ShiftStateAwareActivity implements TaskEventListener {
-
+    public static final String BASE_HOST = "https://app.bringg.com";
     private static final int REQUEST_CODE_LOGIN_ACTIVITY = 1;
     private DrawerLayout mDrawerLayout;
     private Toolbar mToolBar;
@@ -72,6 +69,8 @@ public class MainActivity extends ShiftStateAwareActivity implements TaskEventLi
         // when not logged in we will start LoginActivity, otherwise we can proceed showing the task list
         if (!isLoggedIn()) {
             startLoginActivityForResult();
+            finish();
+            return;
         } else {
             onUserLoginStateChanged();
         }
@@ -374,12 +373,6 @@ public class MainActivity extends ShiftStateAwareActivity implements TaskEventLi
     }
 
     @Override
-    public void onTasksLoaded(@NonNull Collection<Task> tasks) {
-        Log.d(TAG, "onTasksLoaded");
-        updateTaskList();
-    }
-
-    @Override
     public void onPendingTaskDataUpdated(@NonNull PendingTasksData pendingTasksData) {
         Log.d(TAG, "onPendingTaskDataUpdated");
     }
@@ -409,7 +402,7 @@ public class MainActivity extends ShiftStateAwareActivity implements TaskEventLi
     private class TasksAdapterListenerImpl implements TasksAdapter.TasksAdapterListener {
         @Override
         public void onItemSelected(long taskId) {
-            startActivity(TaskActivity.getIntent(MainActivity.this, taskId));
+            startActivity(TaskActivity.getIntent(TaskListActivity.this, taskId));
         }
     }
 }

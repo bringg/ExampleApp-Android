@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +13,8 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 
 import com.bringg.exampleapp.R;
-import com.bringg.exampleapp.activity.ShiftStateAwareActivity;
+import com.bringg.exampleapp.fragments.waypoint.TaskFlowFragment;
+import com.bringg.exampleapp.fragments.waypoint.WaypointFragmentBase;
 
 import java.util.ArrayList;
 import java.util.List;

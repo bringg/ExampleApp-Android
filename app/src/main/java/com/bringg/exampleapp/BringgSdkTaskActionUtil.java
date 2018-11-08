@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp;
 
 import android.Manifest;
 import android.content.Context;
@@ -27,7 +27,7 @@ import driver_sdk.tasks.TaskActionCallback;
  * 5. Call waypoint customer
  * 6. Send waypoint customer a text message
  */
-class BringgSdkTaskActionUtil {
+public class BringgSdkTaskActionUtil {
 
 
     private static final int ERROR_NOT_IMPLEMENTED = 1000;

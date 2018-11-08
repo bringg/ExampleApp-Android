@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.login;
+package com.bringg.exampleapp.activity;
 
 import android.Manifest;
 import android.content.Context;
@@ -17,8 +17,8 @@ import android.widget.RadioGroup;
 import android.widget.ViewAnimator;
 
 import com.bringg.exampleapp.R;
-import com.bringg.exampleapp.activity.BaseActivity;
-import com.bringg.exampleapp.utils.ScannerActivity;
+import com.bringg.exampleapp.views.login.LoginWithEmailView;
+import com.bringg.exampleapp.views.login.LoginWithPhoneView;
 import com.bringg.exampleapp.views.dialogs.ListItemDialog;
 
 import java.util.Locale;

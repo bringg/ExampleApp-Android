@@ -1,4 +1,4 @@
-package com.bringg.exampleapp.tasks;
+package com.bringg.exampleapp.fragments.waypoint;
 
 import android.content.Context;
 import android.os.Bundle;

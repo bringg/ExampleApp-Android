@@ -59,12 +59,15 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         initActionBar();
         initDrawer();
         initRecycleView();
         initSwipeRefreshItem();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         // we may start when already logged in if the user already logged in on a previous session
         // when not logged in we will start LoginActivity, otherwise we can proceed showing the task list
         if (!isLoggedIn()) {

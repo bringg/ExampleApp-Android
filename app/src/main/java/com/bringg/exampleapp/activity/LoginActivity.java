@@ -17,15 +17,15 @@ import android.widget.RadioGroup;
 import android.widget.ViewAnimator;
 
 import com.bringg.exampleapp.R;
+import com.bringg.exampleapp.views.dialogs.ListItemDialog;
 import com.bringg.exampleapp.views.login.LoginWithEmailView;
 import com.bringg.exampleapp.views.login.LoginWithPhoneView;
-import com.bringg.exampleapp.views.dialogs.ListItemDialog;
 
-import java.util.Locale;
 import java.util.Map;
 
 import driver_sdk.BringgSDKClient;
 import driver_sdk.account.LoginCallback;
+import driver_sdk.account.LoginError;
 import driver_sdk.account.RequestConfirmationCallback;
 
 public class LoginActivity extends BaseActivity {
@@ -184,7 +184,7 @@ public class LoginActivity extends BaseActivity {
      */
     private void loginWithPhone(@NonNull String phone, @NonNull String smsVerificationCode, @Nullable String merchantId) {
         showLoadingProgress();
-        BringgSDKClient.getInstance().loginActions().loginWithPhone(phone, smsVerificationCode, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+        BringgSDKClient.getInstance().loginActions().loginWithPhone(phone, smsVerificationCode, merchantId, mApiRequestCallback);
     }
 
     /**
@@ -201,7 +201,7 @@ public class LoginActivity extends BaseActivity {
      */
     private void loginWithEmail(@NonNull String email, @NonNull String password, @Nullable String merchantId) {
         showLoadingProgress();
-        BringgSDKClient.getInstance().loginActions().loginWithEmail(email, password, merchantId, Locale.getDefault().getCountry(), mApiRequestCallback);
+        BringgSDKClient.getInstance().loginActions().loginWithEmail(email, password, merchantId, mApiRequestCallback);
     }
 
     /**
@@ -224,7 +224,7 @@ public class LoginActivity extends BaseActivity {
         showLoadingProgress();
 
         // send sms confirmation code request to Bringg
-        BringgSDKClient.getInstance().loginActions().requestConfirmation(phone, Locale.getDefault().getCountry(), new RequestConfirmationCallback() {
+        BringgSDKClient.getInstance().loginActions().requestConfirmation(phone, new RequestConfirmationCallback() {
 
             @Override
             public void onRequestConfirmationSuccess() {
@@ -274,21 +274,16 @@ public class LoginActivity extends BaseActivity {
     private class ApiRequestCallbackImpl implements LoginCallback {
 
         @Override
+        public void onLoginFailed(@NonNull LoginError loginError) {
+            hideLoadingProgress();
+            showErrorMessage("Login failed, error=" + loginError);
+        }
+
+        @Override
         public void onLoginSuccess() {
             hideLoadingProgress();
             setResult(RESULT_OK);
             finish();
-        }
-
-        @Override
-        public void onLoginFailed() {
-            hideLoadingProgress();
-            showErrorMessage("Login failed");
-        }
-
-        @Override
-        public void onLoginCanceled() {
-            showErrorMessage("Login canceled");
         }
 
         @Override

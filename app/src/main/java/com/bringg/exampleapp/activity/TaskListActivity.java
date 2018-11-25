@@ -88,7 +88,7 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
     private void onUserLoginStateChanged() {
 
         // get the user details from the sdk
-        User user = BringgSDKClient.getInstance().user().getCurrentUser();
+        User user = BringgSDKClient.getInstance().getUser();
 
         // user will be null when we are not logged in
         if (user == null) {

@@ -80,7 +80,7 @@ public class TaskActivity extends ShiftStateAwareActivity implements WaypointFra
 
                 @Override
                 public void onActionDone() {
-
+                    finish();
                 }
 
                 @Override

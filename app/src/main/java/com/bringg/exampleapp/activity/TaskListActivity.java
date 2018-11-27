@@ -161,6 +161,14 @@ public class TaskListActivity extends ShiftStateAwareActivity implements TaskEve
         startLoginActivityForResult();
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (BringgSDKClient.getInstance().shiftState().isOnShift()) {
+            updateTaskList();
+        }
+    }
+
     /**
      * called from ShiftAwareActivity when shift state changes
      * here we update our UI state accordingly

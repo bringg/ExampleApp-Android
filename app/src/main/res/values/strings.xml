@@ -43,5 +43,6 @@
     <string name="no_now">Not now</string>
     <string name="incomplete_mandatory_actions">You hava to complete these actions:</string>
     <string name="ok">OK</string>
+    <string name="cancel_task">Cancel Task</string>
 
 </resources>

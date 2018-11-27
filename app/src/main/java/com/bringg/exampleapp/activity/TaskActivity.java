@@ -11,6 +11,9 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.bringg.exampleapp.R;
 import com.bringg.exampleapp.fragments.waypoint.TaskFlowFragment;
@@ -18,10 +21,13 @@ import com.bringg.exampleapp.fragments.waypoint.WaypointFragmentBase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import driver_sdk.BringgSDKClient;
+import driver_sdk.content.callback.CancelTaskCallback;
 import driver_sdk.models.Task;
 import driver_sdk.models.Waypoint;
+import driver_sdk.models.configuration.TaskActionItem;
 
 public class TaskActivity extends ShiftStateAwareActivity implements WaypointFragmentBase.InteractionCallback {
 
@@ -61,6 +67,38 @@ public class TaskActivity extends ShiftStateAwareActivity implements WaypointFra
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_cancel_task) {
+            BringgSDKClient.getInstance().taskActions().cancelTask(mTask.getId(), "Customer was not available", new CancelTaskCallback() {
+                @Override
+                public void onMandatoryCancelActionsInComplete(@NonNull Set<TaskActionItem> set) {
+
+                }
+
+                @Override
+                public void onActionDone() {
+
+                }
+
+                @Override
+                public void onActionFailed(int i) {
+
+                }
+            });
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.task_activity_menu, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     private void initActionBar() {

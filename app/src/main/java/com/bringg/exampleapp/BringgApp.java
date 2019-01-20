@@ -11,10 +11,12 @@ import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.util.Log;
 
 import com.bringg.exampleapp.activity.TaskListActivity;
 
 import driver_sdk.BringgSDKBuilder;
+import driver_sdk.BringgSDKClient;
 import driver_sdk.providers.NotificationProvider;
 
 
@@ -30,8 +32,8 @@ public class BringgApp extends Application {
         // we provide here:
         // 1. context
         // 2. Notification provider - provides the foreground service notification
-        new BringgSDKBuilder(this, new NotificationProviderImpl())
-                .build();
+        new BringgSDKBuilder(this, new NotificationProviderImpl()).build();
+        Log.i(TAG, "isOnShift=" + BringgSDKClient.getInstance().shiftState().isOnShift() + ", shift=" + BringgSDKClient.getInstance().shiftState().getShift());
     }
 
     private class NotificationProviderImpl implements NotificationProvider {
